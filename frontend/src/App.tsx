@@ -7,6 +7,18 @@ interface Message {
   text: string;
 }
 
+interface PeerConnectionInfo {
+  isInitiator: boolean;
+  peerId: string;
+}
+
+interface PeerSignalingData {
+  peerId: string;
+  answer?: RTCSessionDescriptionInit;
+  candidate?: object;
+  offer?: RTCSessionDescriptionInit
+}
+
 const App: React.FC = () => {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [roomName, setRoomName] = useState<string>('');
@@ -24,14 +36,14 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    socket?.on('signal', (data: any) => {
+    socket?.on('signal', (data: PeerSignalingData) => {
       console.log('onSignal')
       handleSignalingData(data);
     });
 
-    socket?.on('joined', async (isInitiator: boolean) => {
-      console.log('on joined', { isInitiator })
-      createConnection(isInitiator)
+    socket?.on('joined', async (obj: PeerConnectionInfo) => {
+      console.log('on joined', obj)
+      createConnection(obj);
     });
 
     socket?.on('user-left', (data: any) => {
@@ -60,7 +72,7 @@ const App: React.FC = () => {
     };
   };
 
-  const createConnection = async (isInitiator: boolean) => {
+  const createConnection = async ({ isInitiator, peerId }: PeerConnectionInfo) => {
     // Other RTCPeerConnection setup (ICE handling, etc) here...
 
     const configuration = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
@@ -69,7 +81,7 @@ const App: React.FC = () => {
 
     peerConnection.onicecandidate = (event: RTCPeerConnectionIceEvent) => {
       if (event.candidate) {
-        socket?.emit('signal', { room: roomName, candidate: event.candidate });
+        socket?.emit('signal', { peerId, candidate: event.candidate });
       }
     };
 
@@ -79,8 +91,8 @@ const App: React.FC = () => {
       setupDataChannel(dataChannelRef.current);
       const offer = await peerConnection.createOffer();
       await peerConnection.setLocalDescription(offer);
-      console.log('Initiating offer', { roomName })
-      socket?.emit('signal', { room: roomName, offer });
+      console.log('Initiating offer', { peerId })
+      socket?.emit('signal', { peerId, offer });
       console.log('Offer Initiated')
     }
     else {
@@ -93,7 +105,7 @@ const App: React.FC = () => {
 
   }
 
-  const handleSignalingData = async (data: any) => {
+  const handleSignalingData = async (data: PeerSignalingData) => {
     if (!peerConnectionRef.current || !socket) {
       return;
     }
@@ -103,7 +115,7 @@ const App: React.FC = () => {
       const answer = await peerConnectionRef.current.createAnswer();
       await peerConnectionRef.current.setLocalDescription(answer);
       console.log("offer accepted. creating answer");
-      socket.emit('signal', { room: roomName, answer });
+      socket.emit('signal', { peerId: data.peerId, answer });
       console.log("offer accepted. created answer");
     } else if (data.answer) {
       console.log('acceptting answer');

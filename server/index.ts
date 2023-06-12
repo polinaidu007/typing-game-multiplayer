@@ -62,7 +62,7 @@ io.on('connection', (socketObj: Socket) => {
   });
 
   socket.on('disconnect', () => {
-    console.log('User disconnected', socket.rooms, rooms);
+    console.log('User disconnected');
     if (rooms && rooms?.[socket.channel] && socket.id in rooms?.[socket.channel]) {
       delete rooms[socket.channel][socket.id];
     }

@@ -1,6 +1,6 @@
 import * as React from 'react';
 import MyContext from '../context/myContext';
-import { PeerSignalingData, PeerConnectionInfo } from '../interfaces/all.interface';
+import { PeerSignalingData, PeerConnectionInfo, Message } from '../interfaces/all.interface';
 import { newSocket } from '../socket';
 import {
     useNavigate,
@@ -16,6 +16,7 @@ function JoinRoom() {
         peerConnectionRef, dataChannelRef } = React.useContext(MyContext);
     const navigate = useNavigate();
     const usernameRef = React.useRef('');
+    const peernamesRef = React.useRef<{ [key: string]: string }>({});
 
     React.useEffect(() => {
         console.log('JoinRoom:');
@@ -70,8 +71,11 @@ function JoinRoom() {
             announceStatus(peerId, true);
         };
         dataChannel.onmessage = (event) => {
-            console.log("New msg:", event.data)
-            setMessages((prevMessages) => [...prevMessages, JSON.parse(event.data)]);
+            console.log("New msg:", event.data);
+            let message: Message = JSON.parse(event.data);
+            if (message?.isOnline)
+                peernamesRef.current[peerId] = message?.username
+            setMessages((prevMessages) => [...prevMessages, message]);
         };
     };
 
@@ -114,6 +118,10 @@ function JoinRoom() {
 
                     delete dataChannelRef.current[peerId];
                     delete peerConnectionRef.current[peerId];
+                    let peername = peernamesRef.current[peerId];
+                    delete peernamesRef.current[peerId];
+                    setMessages((prevMessages) => [...prevMessages, { username: peername, isOnline: false }]);
+
                     // Handle the disconnection
                     break;
                 case 'failed':

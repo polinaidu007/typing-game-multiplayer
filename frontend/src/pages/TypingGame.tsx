@@ -69,32 +69,62 @@ function TypingGame() {
     return (
         <div className='flex flex-col items-center w-[100vw] h-[100vh]'>
             <div className='p-4'>
-                <h1 className='text-6xl'>Typing game</h1>
+                <h1 className='font-press-start text-6xl'>Typing game</h1>
             </div>
-            <div className='flex items-center w-[100%] h-[100%]'>
-                <div className='w-[20vw]'>
-                    <ul>
-                        {
-                            onlineList.map((item) => (
-                                <li key={item.username}><span>{`${item.username}   ${item.status}`}</span></li>
-                            ))
-                        }
-                    </ul>
+            <div className='flex w-[100%] h-[100%]'>
+                <div className='w-[20vw] p-4'>
+                    {
+                        onlineList.length ?
+                            (
+                                <>
+                                    <h2 className="text-xl font-orbitron text-center text-fuchsia-500 mb-4">Players Online</h2>
+                                    <ul className='font-orbitron list-disc list-inside space-y-2 bg-white p-4 shadow-lg rounded-lg'>
+                                        {
+                                            onlineList.map((item) => (
+                                                <li className="flex justify-between text-xs font-semibold text-gray-700" key={item.username}>
+                                                    <span className="text-gray-700">{item.username}</span>
+                                                    <span className="text-green-500">{item.status}</span>
+                                                </li>
+                                            ))
+                                        }
+                                    </ul></>) : 'Waiting for others to join'
+                    }
+
                 </div>
                 <div className='w-[60vw] flex flex-col items-center '>
-                    <div className='w-[80%] border border-gray-300 p-4 m-2'>
-                        {paragraph}
+                    <div className='font-space-mono w-[80%] border border-gray-300 p-4 m-2'>
+                        {
+                            text.length === 0 ?
+                                <span className="">
+                                    {paragraph}
+                                </span>
+                                :
+                                <>
+                                    <span className="text-gray-400">
+                                        {paragraph.slice(0, text.length - 1)}
+                                    </span>
+                                    <span className={paragraph[text.length - 1] !== text.slice(-1) ? "text-red-400" : "text-gray-400"}>
+                                        {paragraph.slice(text.length - 1, text.length)}
+                                    </span>
+                                    <span className="">
+                                        {paragraph.slice(text.length)}
+                                    </span>
+                                </>
+                        }
                     </div>
                     <div className='w-[80%] border border-gray-300 p-4 m-2'>
-                        <textarea placeholder='start typing...' className='w-full h-80 focus:outline-none'
+                        <textarea placeholder='start typing...' className='font-space-mono w-full h-60 focus:outline-none'
                             value={text}
                             disabled={finished}
                             onChange={handleChange}
                             onKeyDown={handleKeyDown}
                         />
                     </div>
-                    {error && <span className='text-red-900'>You mistyped the last letter. Correct it to continue.</span>}
-                    {finished && <span className='text-green-600'>Congrats.</span>}
+                    <span className='text-red-500 h-3 font-semibold'>{error && `You mistyped the last letter. Correct it to continue.`}</span>
+                    <span className='text-green-500 h-3 font-semibold'>{finished && `Congrats.`}</span>
+                    <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                        I'm Ready!
+                    </button>
                 </div>
                 <div className='w-[20vh]'>
 

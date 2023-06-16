@@ -3,7 +3,10 @@ import { Socket } from "socket.io-client";
 
 export interface Message {
   username: string;
-  text: string;
+  text ?: string;
+  isOnline ?: boolean;
+  status ?: 'READY' | 'WAITING';
+  peerId ?: string;
 }
 
 export interface PeerConnectionInfo {

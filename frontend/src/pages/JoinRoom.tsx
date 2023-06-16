@@ -15,6 +15,7 @@ function JoinRoom() {
         setMessages,
         peerConnectionRef, dataChannelRef } = React.useContext(MyContext);
     const navigate = useNavigate();
+    const usernameRef = React.useRef('');
 
     React.useEffect(() => {
         console.log('JoinRoom:');
@@ -58,19 +59,34 @@ function JoinRoom() {
         if (socket && roomName && username) {
             socket.emit('join-room', roomName);
             setIsJoined(true);
-            navigate('/chat')
+            navigate('/typing-game')
         };
     }
 
-    const setupDataChannel = (dataChannel: RTCDataChannel) => {
+    const setupDataChannel = (peerId: string) => {
+        const dataChannel = dataChannelRef.current[peerId];
         dataChannel.onopen = () => {
             console.log('Data Channel is open');
+            announceStatus(peerId, true);
         };
         dataChannel.onmessage = (event) => {
             console.log("New msg:", event.data)
             setMessages((prevMessages) => [...prevMessages, JSON.parse(event.data)]);
         };
     };
+
+    const announceStatus = (peerId: string, isOnline: boolean) => {
+        if (dataChannelRef.current) {
+            const obj = { username: usernameRef.current, isOnline, peerId }
+            const messageData = JSON.stringify(obj);
+            if (dataChannelRef.current[peerId].readyState === 'open') {
+                dataChannelRef.current[peerId].send(messageData);
+            }
+            else {
+                console.warn('Data channel is not open');
+            }
+        }
+    }
 
 
     const createConnection = async ({ isInitiator, peerId }: PeerConnectionInfo) => {
@@ -91,11 +107,10 @@ function JoinRoom() {
             switch (peerConnection.iceConnectionState) {
                 case 'disconnected':
                     console.log('The user has disconnected.', Object.keys(peerConnectionRef.current), Object.keys(dataChannelRef.current));
-                    for (let peerId in dataChannelRef.current)
-                        dataChannelRef.current[peerId]?.close();
 
-                    for (let peerId in peerConnectionRef.current)
-                        peerConnectionRef.current[peerId]?.close();
+                    dataChannelRef.current[peerId]?.close();
+
+                    peerConnectionRef.current[peerId]?.close();
 
                     delete dataChannelRef.current[peerId];
                     delete peerConnectionRef.current[peerId];
@@ -109,6 +124,9 @@ function JoinRoom() {
                     console.log('The connection has been closed.');
                     // Handle the connection closing
                     break;
+                case 'connected':
+                    console.log('WebRTC connection established');
+                    break;
             }
         };
 
@@ -116,7 +134,7 @@ function JoinRoom() {
         if (isInitiator) {
             dataChannelRef.current[peerId] = peerConnectionRef.current[peerId].createDataChannel('chat');
             console.log("After populating dataChannelRef", Object.keys(dataChannelRef.current));
-            setupDataChannel(dataChannelRef.current[peerId]);
+            setupDataChannel(peerId);
             const offer = await peerConnection.createOffer();
             await peerConnection.setLocalDescription(offer);
             console.log('Initiating offer', { peerId })
@@ -128,7 +146,7 @@ function JoinRoom() {
             peerConnectionRef.current[peerId].ondatachannel = (event) => {
                 dataChannelRef.current[peerId] = event.channel;
                 console.log("After populating dataChannelRef", Object.keys(dataChannelRef.current));
-                setupDataChannel(dataChannelRef.current[peerId]);
+                setupDataChannel(peerId);
             };
         }
 
@@ -161,12 +179,17 @@ function JoinRoom() {
         }
     };
 
+    const onChangeUsername: React.ChangeEventHandler<HTMLInputElement> = (e) => {
+        setUsername(e.target.value);
+        usernameRef.current = e.target.value;
+    }
+
     return (
         <div>
             <input
                 type="text"
                 value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                onChange={onChangeUsername}
                 placeholder="Enter username"
             />
             <input

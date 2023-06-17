@@ -17,6 +17,7 @@ function MyContextProvider({ children }: any) {
     const [messages, setMessages] = useState<Message[]>([]);
     const peerConnectionRef = useRef({});
     const dataChannelRef = useRef({});
+    let [onlineUsersMap, setOnlineUsersMap] = useState({});
 
     // Define the context value
     const contextValue = {
@@ -33,7 +34,9 @@ function MyContextProvider({ children }: any) {
         messages,
         setMessages,
         peerConnectionRef,
-        dataChannelRef
+        dataChannelRef,
+        onlineUsersMap,
+        setOnlineUsersMap
     };
 
 

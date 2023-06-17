@@ -28,6 +28,9 @@ export interface PeerConnectionsMap {
 export interface PeerChannelsMap {
   [key: string]: RTCDataChannel;
 }
+type PeerIdUsersMap = {
+  [key: string]: Required<Pick<Message, 'username' | 'status'>>;
+};
 
 export interface MyContextType {
   socket: Socket | null;
@@ -42,4 +45,6 @@ export interface MyContextType {
   setIsJoined: Dispatch<SetStateAction<boolean>>;
   peerConnectionRef: MutableRefObject<PeerConnectionsMap>;
   dataChannelRef: MutableRefObject<PeerChannelsMap>;
+  onlineUsersMap: PeerIdUsersMap;
+  setOnlineUsersMap : Dispatch<SetStateAction<PeerIdUsersMap>>;
 }

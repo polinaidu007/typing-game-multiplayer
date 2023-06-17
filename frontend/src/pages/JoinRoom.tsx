@@ -13,10 +13,9 @@ function JoinRoom() {
         roomName, setRoomName,
         setIsJoined,
         setMessages,
-        peerConnectionRef, dataChannelRef } = React.useContext(MyContext);
+        peerConnectionRef, dataChannelRef, setOnlineUsersMap } = React.useContext(MyContext);
     const navigate = useNavigate();
     const usernameRef = React.useRef('');
-    const peernamesRef = React.useRef<{ [key: string]: string }>({});
 
     React.useEffect(() => {
         console.log('JoinRoom:');
@@ -73,8 +72,12 @@ function JoinRoom() {
         dataChannel.onmessage = (event) => {
             console.log("New msg:", event.data);
             let message: Message = JSON.parse(event.data);
-            if (message?.isOnline)
-                peernamesRef.current[peerId] = message?.username
+            if (message?.isOnline) {
+                setOnlineUsersMap((prevData) => ({
+                    ...prevData,
+                    [peerId]: { username: message.username, status: message.status ?? 'WAITING' }
+                }));
+            }
             setMessages((prevMessages) => [...prevMessages, message]);
         };
     };
@@ -118,9 +121,11 @@ function JoinRoom() {
 
                     delete dataChannelRef.current[peerId];
                     delete peerConnectionRef.current[peerId];
-                    let peername = peernamesRef.current[peerId];
-                    delete peernamesRef.current[peerId];
-                    setMessages((prevMessages) => [...prevMessages, { username: peername, isOnline: false }]);
+                    setOnlineUsersMap((prevData) => {
+                        const newData = { ...prevData };
+                        delete newData[peerId];
+                        return newData;
+                    });
 
                     // Handle the disconnection
                     break;

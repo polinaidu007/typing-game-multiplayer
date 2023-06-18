@@ -3,10 +3,14 @@ import { Socket } from "socket.io-client";
 
 export interface Message {
   username: string;
+  info ?: 'ONLINE' | 'PROGRESS' | 'STATUS';
   text ?: string;
-  isOnline ?: boolean;
   status ?: 'READY' | 'WAITING';
   peerId ?: string;
+  progressStats ?: {
+    percentageCompleted ?: number;
+    timeTakenToComplete ?: number;
+  }
 }
 
 export interface PeerConnectionInfo {
@@ -32,6 +36,16 @@ type PeerIdUsersMap = {
   [key: string]: Required<Pick<Message, 'username' | 'status'>>;
 };
 
+export type PeerIdProgressMap = {
+  [key: string]: ProgressItem;
+};
+
+export interface ProgressItem {
+    username : string;
+    percentageCompleted ?: number;
+    timeTakenToComplete ?: number
+}
+
 export interface MyContextType {
   socket: Socket | null;
   setSocket: Dispatch<any>;
@@ -47,4 +61,19 @@ export interface MyContextType {
   dataChannelRef: MutableRefObject<PeerChannelsMap>;
   onlineUsersMap: PeerIdUsersMap;
   setOnlineUsersMap : Dispatch<SetStateAction<PeerIdUsersMap>>;
+  progressMap: PeerIdProgressMap;
+  setProgressMap : Dispatch<SetStateAction<PeerIdProgressMap>>;
+}
+
+type OnTimeChangeCallback = (time: number) => void;
+
+export interface TimerProps {
+  stop: boolean;
+  onTimeChange: OnTimeChangeCallback;
+}
+
+export interface ProgressBarsContainerProps {
+    dictionary : PeerIdProgressMap;
+    username : string, 
+    percentageCompleted : number
 }

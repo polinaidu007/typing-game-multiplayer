@@ -13,7 +13,7 @@ function JoinRoom() {
         roomName, setRoomName,
         setIsJoined,
         setMessages,
-        peerConnectionRef, dataChannelRef, setOnlineUsersMap } = React.useContext(MyContext);
+        peerConnectionRef, dataChannelRef, setOnlineUsersMap, setProgressMap } = React.useContext(MyContext);
     const navigate = useNavigate();
     const usernameRef = React.useRef('');
 
@@ -67,24 +67,45 @@ function JoinRoom() {
         const dataChannel = dataChannelRef.current[peerId];
         dataChannel.onopen = () => {
             console.log('Data Channel is open');
-            announceStatus(peerId, true);
+            announceOnlineStatus(peerId);
         };
         dataChannel.onmessage = (event) => {
             console.log("New msg:", event.data);
             let message: Message = JSON.parse(event.data);
-            if (message?.isOnline) {
-                setOnlineUsersMap((prevData) => ({
-                    ...prevData,
-                    [peerId]: { username: message.username, status: message.status ?? 'WAITING' }
-                }));
+            switch (message?.info) {
+                case 'ONLINE':
+                case 'STATUS':
+                    setOnlineUsersMap((prevData) => ({
+                        ...prevData,
+                        [peerId]: {
+                            username: message.username,
+                            status: message.status ?? 'WAITING'
+                        }
+                    }));
+                    break;
+                case 'PROGRESS':
+                    // Handle the 'PROGRESS' case
+                    setProgressMap((prevData) => ({
+                        ...prevData,
+                        [peerId]: {
+                            username: message.username,
+                            percentageCompleted: message?.progressStats?.percentageCompleted,
+                            timeTakenToComplete: message?.progressStats?.timeTakenToComplete
+                        }
+                    }));
+                    break;
+                default:
+                    // Handle other cases or do nothing
+                    setMessages((prevMessages) => [...prevMessages, message]);
+                    break;
             }
-            setMessages((prevMessages) => [...prevMessages, message]);
+
         };
     };
 
-    const announceStatus = (peerId: string, isOnline: boolean) => {
+    const announceOnlineStatus = (peerId: string) => {
         if (dataChannelRef.current) {
-            const obj = { username: usernameRef.current, isOnline, peerId }
+            const obj: Message = { username: usernameRef.current, info: 'ONLINE', peerId }
             const messageData = JSON.stringify(obj);
             if (dataChannelRef.current[peerId].readyState === 'open') {
                 dataChannelRef.current[peerId].send(messageData);
@@ -126,6 +147,12 @@ function JoinRoom() {
                         delete newData[peerId];
                         return newData;
                     });
+                    setProgressMap((prevData) => {
+                        const newData = { ...prevData };
+                        delete newData[peerId];
+                        return newData;
+                    });
+
 
                     // Handle the disconnection
                     break;

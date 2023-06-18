@@ -1,16 +1,21 @@
 import React, { useEffect, useState } from 'react';
 import MyContext from '../context/myContext';
 import { useNavigate } from 'react-router-dom';
+import { Message, ProgressBarsContainerProps, ProgressItem, TimerProps } from '../interfaces/all.interface';
 
 let paragraph = `Breakfast, often dubbed the most important meal of the day, fuels the body after a night's rest. Consuming a balanced breakfast with proteins, grains, and fruits enhances concentration and stamina. It also curbs overeating later, aiding weight management. Prioritizing breakfast promotes a healthy lifestyle and contributes to overall well-being.`
 
 function TypingGame() {
-    let { username, roomName, isJoined, onlineUsersMap } = React.useContext(MyContext);
+    let { username, roomName, isJoined, onlineUsersMap, dataChannelRef, progressMap } = React.useContext(MyContext);
     const navigate = useNavigate();
     let [text, setText] = useState('');
     let [error, setError] = useState(false);
     let [finished, setFinished] = useState(false);
-    let [progressBarVal, setProgressBarVal] = useState(0);
+    let [isReady, setIsReady] = useState(false);
+    let [startCountdown, setStartCountdown] = useState(false);
+    let [startGame, setStartGame] = useState(false);
+    let [timeTaken, setTimeTaken] = useState(0);
+    let [percentageCompleted, setPercentageCompleted] = useState(0);
 
     useEffect(() => {
         console.log("useEffect typingGame:")
@@ -24,10 +29,34 @@ function TypingGame() {
             setError(true);
         else {
             setError(false);
+            broadcastProgressInfo()
             if (paragraph.length === text.length)
                 setFinished(true);
         }
     }, [text])
+
+    useEffect(() => {
+        checkIfEveryonesReady();
+    }, [JSON.stringify(onlineUsersMap), isReady])
+
+    const checkIfEveryonesReady = () => {
+        if (!isReady)
+            return;
+        if (Object.keys(onlineUsersMap).length) {
+            console.log(onlineUsersMap)
+            for (let peerId in onlineUsersMap) {
+                if (onlineUsersMap[peerId].status === 'WAITING')
+                    return;
+            }
+            setStartCountdown(true);
+        }
+    }
+
+    const broadcastProgressInfo = () => {
+        let progressValue = (text.length / paragraph.length) * 100;
+        setPercentageCompleted(progressValue);
+        sendMessageToAllConnecions({ username, info: 'PROGRESS', progressStats: { percentageCompleted: progressValue } });
+    }
 
     const handleChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
         setText(event.target.value);
@@ -43,8 +72,34 @@ function TypingGame() {
     };
 
     const handleClick = () => {
-        const randomNumber = Math.floor(Math.random() * 101);
-        setProgressBarVal(randomNumber)
+        // const randomNumber = Math.floor(Math.random() * 101);
+        // setProgressBarVal(randomNumber);
+        console.log('clicked')
+        setIsReady(true);
+        sendMessageToAllConnecions({ status: 'READY', username, info: 'STATUS' })
+    }
+
+    const sendMessageToAllConnecions = (message: Message) => {
+        if (dataChannelRef.current) {
+            const messageData = JSON.stringify(message);
+            for (let peerId in dataChannelRef.current) {
+                if (dataChannelRef.current[peerId].readyState === 'open') {
+                    dataChannelRef.current[peerId].send(messageData);
+                }
+                else {
+                    console.warn('Data channel is not open');
+                }
+            }
+        }
+    };
+
+    const handleTimerEnd = () => {
+        setStartGame(true);
+        setStartCountdown(false);
+    }
+
+    const getTimeTaken = (time: number) => {
+        setTimeTaken(time);
     }
 
     return (
@@ -58,13 +113,13 @@ function TypingGame() {
                     <ul className='font-orbitron list-disc list-inside space-y-2 bg-white p-4 shadow-lg rounded-lg'>
                         <li className="flex justify-between text-xs font-semibold text-gray-700">
                             <span className="text-gray-700">{`${username} (self)`}</span>
-                            <span className="text-green-500">{ }</span>
+                            <span className={isReady ? `text-green-500` : `text-red-500`}>{isReady ? 'READY' : 'WAITING'}</span>
                         </li>
                         {
                             Object.keys(onlineUsersMap).map((key) => (
                                 <li className="flex justify-between text-xs font-semibold text-gray-700" key={key}>
                                     <span className="text-gray-700">{onlineUsersMap[key].username}</span>
-                                    <span className="text-green-500">{onlineUsersMap[key].status}</span>
+                                    <span className={onlineUsersMap[key].status === 'READY' ? `text-green-500` : `text-red-500`}>{onlineUsersMap[key].status}</span>
                                 </li>
                             ))
                         }
@@ -101,13 +156,19 @@ function TypingGame() {
                     </div>
 
                     <span className='text-red-500 h-3 font-semibold'>{error && `You mistyped the last letter. Correct it to continue.`}</span>
-                    <span className='text-green-500 h-3 font-semibold'>{finished && `Congrats.`}</span>
-                    <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" onClick={handleClick}>
+                    <span className='text-green-500 h-3 font-semibold mb-4'>{finished && `Congrats! You've completed in ${timeTaken} seconds.`}</span>
+                    {!startGame && <button
+                        className={`bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded ${isReady ? 'disabled:opacity-50 cursor-not-allowed' : ''}`}
+                        disabled={isReady}
+                        onClick={handleClick}
+                    >
                         I'm Ready!
-                    </button>
+                    </button>}
+                    {startCountdown && (<CountdownTimer onTimerEnd={handleTimerEnd} />)}
+                    {startGame && <Timer stop={finished} onTimeChange={getTimeTaken} />}
                 </div>
                 <div className='w-[20vw]'>
-                    <NamesAndProgressContainer arr={[{ name: 'tony', value: 10 }, { name: "dragon", value: 20 }]} />
+                    {startGame && <ProgressBarsContainer dictionary={progressMap} username={username} percentageCompleted={percentageCompleted} />}
                 </div>
             </div>
 
@@ -115,29 +176,86 @@ function TypingGame() {
     );
 }
 
-const ProgressBar = ({ value, name }: any) => {
+const ProgressBar: React.FC<ProgressItem> = ({ percentageCompleted, username }) => {
     return (
         <div className="relative w-full h-4 bg-gray-300 rounded overflow-hidden">
             <div
                 className={`h-full bg-blue-500 transition-all duration-1000 ease-out`}
-                style={{ width: `${value}%` }}
+                style={{ width: `${percentageCompleted}%` }}
             ></div>
-            <span className="absolute inset-0 flex items-center justify-center text-gray-700 font-orbitron text-xs font-semibold">{name}</span>
+            <span className="absolute inset-0 flex items-center justify-center text-gray-700 font-orbitron text-xs font-semibold">{username}</span>
         </div>
     );
 };
 
-const NamesAndProgressContainer = ({ arr }: any) => {
-    console.log(arr);
+const ProgressBarsContainer: React.FC<ProgressBarsContainerProps> = ({ dictionary, username, percentageCompleted }) => {
+    console.log(dictionary);
     return (
         <div className='space-y-2 bg-white p-4 shadow-lg rounded-lg w-[90%] max-h-full'>
+            <ProgressBar username={`${username} (self)`} percentageCompleted={percentageCompleted} />
             {
-                arr.map((item: any) =>
-                    <ProgressBar key={item.name} name={item.name} value={item.value} />
+                Object.keys(dictionary).map((key) =>
+                    <ProgressBar key={key} username={dictionary[key].username} percentageCompleted={dictionary[key].percentageCompleted} />
                 )
             }
         </div>);
 }
+
+const CountdownTimer = ({ onTimerEnd }: { onTimerEnd: () => void }) => {
+    const [countdown, setCountdown] = useState(5);
+
+    useEffect(() => {
+        if (countdown > 0) {
+            const timer = setTimeout(() => {
+                setCountdown(prevCountdown => prevCountdown - 1);
+            }, 1000);
+
+            return () => clearTimeout(timer);
+        } else {
+            onTimerEnd(); // Invoke the callback when the countdown reaches zero
+        }
+    }, [countdown, onTimerEnd]);
+
+    return (
+        <div className="bg-gray-200 p-2 rounded mt-3">
+            {countdown === 0 ? (
+                <span className="text-red-500">Time is up!</span>
+            ) : (
+                <span className="text-gray-700">Game starts in: {countdown}</span>
+            )}
+        </div>
+    );
+};
+
+const Timer: React.FC<TimerProps> = ({ stop, onTimeChange }) => {
+    const [time, setTime] = useState(0);
+    const timerRef = React.useRef<NodeJS.Timeout | null>(null);
+
+    useEffect(() => {
+        timerRef.current = setInterval(() => {
+            setTime(prevTime => prevTime + 1);
+        }, 1000);
+
+        return () => {
+            if (timerRef.current) {
+                clearInterval(timerRef.current);
+            }
+        };
+    }, []);
+
+    useEffect(() => {
+        if (stop) {
+            if (timerRef.current) {
+                clearInterval(timerRef.current);
+            }
+            onTimeChange(time);
+        }
+    }, [stop]);
+
+    return <div>Time: {time}</div>;
+};
+
+
 
 
 export default TypingGame;

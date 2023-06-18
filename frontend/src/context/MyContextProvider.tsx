@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { useState, useRef } from "react";
 import MyContext from "./myContext";
-import { Message } from "../interfaces/all.interface";
+import { Message, PeerIdProgressMap } from "../interfaces/all.interface";
 
 function MyContextProvider({ children }: any) {
     console.log('rendering MyContextProvider:')
@@ -18,6 +18,7 @@ function MyContextProvider({ children }: any) {
     const peerConnectionRef = useRef({});
     const dataChannelRef = useRef({});
     let [onlineUsersMap, setOnlineUsersMap] = useState({});
+    const [progressMap, setProgressMap] = useState<PeerIdProgressMap>({});
 
     // Define the context value
     const contextValue = {
@@ -36,7 +37,9 @@ function MyContextProvider({ children }: any) {
         peerConnectionRef,
         dataChannelRef,
         onlineUsersMap,
-        setOnlineUsersMap
+        setOnlineUsersMap,
+        progressMap,
+        setProgressMap
     };
 
 

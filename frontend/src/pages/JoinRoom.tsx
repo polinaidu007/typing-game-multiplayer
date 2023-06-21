@@ -13,7 +13,10 @@ function JoinRoom() {
         roomName, setRoomName,
         setIsJoined,
         setMessages,
-        peerConnectionRef, dataChannelRef, setOnlineUsersMap, setProgressMap } = React.useContext(MyContext);
+        peerConnectionRef, dataChannelRef, setOnlineUsersMap, setProgressMap, startGame, startCountdown, 
+        gameEndsInCountdownRef, gameStartsInCountDown, isReady, setStartGame, 
+        setGameCountDown, setIsReady, isReadyRef,setGameStartsInCountDown, setStartCountdown, 
+        sendMessageToAllConnections,startGameRef, startCountDownRef  } = React.useContext(MyContext);
     const navigate = useNavigate();
     const usernameRef = React.useRef('');
 
@@ -74,6 +77,26 @@ function JoinRoom() {
             let message: Message = JSON.parse(event.data);
             switch (message?.info) {
                 case 'ONLINE':
+                    setOnlineUsersMap((prevData) => ({
+                        ...prevData,
+                        [peerId]: {
+                            username: message.username,
+                            status: message.status ?? 'WAITING'
+                        }
+                    }));
+                    if(!startGameRef && !startCountDownRef.current && message?.initialInfo?.gameStartsIn){
+                        setIsReady(true);
+                        setGameStartsInCountDown(message.initialInfo.gameStartsIn-1);
+                        setStartCountdown(true);
+                        sendMessageToAllConnections({username : usernameRef.current, info : 'STATUS', status : 'READY'})
+                    }
+                    else if(!startGameRef.current && message?.initialInfo?.gameTimeLeft){
+                        setIsReady(true);
+                        setGameCountDown(message?.initialInfo.gameTimeLeft-1);
+                        setStartGame(true);
+                        sendMessageToAllConnections({username : usernameRef.current, info : 'STATUS', status : 'READY'})
+                    }
+                    break;
                 case 'STATUS':
                     setOnlineUsersMap((prevData) => ({
                         ...prevData,
@@ -103,9 +126,20 @@ function JoinRoom() {
         };
     };
 
-    const announceInitialInfo = (peerId: string) => {
+    function announceInitialInfo(peerId: string) {
         if (dataChannelRef.current) {
-            const obj: Message = { username: usernameRef.current, info: 'ONLINE', peerId }
+            const obj: Message = { username: usernameRef.current, info: 'ONLINE', peerId, status : isReadyRef.current ? 'READY' : 'WAITING' }
+            let temp : Partial<Message> = {};
+            if(startGameRef.current){
+                temp.initialInfo = {};
+                temp.initialInfo.gameTimeLeft = gameEndsInCountdownRef.current
+                Object.assign(obj, temp);
+            }
+            else if(startCountDownRef.current){
+                temp.initialInfo = {};
+                temp.initialInfo.gameStartsIn = gameStartsInCountDown;
+                Object.assign(obj, temp);
+            }
             const messageData = JSON.stringify(obj);
             if (dataChannelRef.current[peerId].readyState === 'open') {
                 dataChannelRef.current[peerId].send(messageData);

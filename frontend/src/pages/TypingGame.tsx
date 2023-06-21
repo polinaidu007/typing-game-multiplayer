@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { Dispatch, SetStateAction, useEffect, useRef, useState } from 'react';
 import MyContext from '../context/myContext';
 import { useNavigate } from 'react-router-dom';
 import { Message, ProgressBarsContainerProps, ProgressItem, TimerProps } from '../interfaces/all.interface';
@@ -6,16 +6,20 @@ import { Message, ProgressBarsContainerProps, ProgressItem, TimerProps } from '.
 let paragraph = `Breakfast, often dubbed the most important meal of the day, fuels the body after a night's rest. Consuming a balanced breakfast with proteins, grains, and fruits enhances concentration and stamina. It also curbs overeating later, aiding weight management. Prioritizing breakfast promotes a healthy lifestyle and contributes to overall well-being.`
 
 function TypingGame() {
-    let { username, roomName, isJoined, onlineUsersMap, dataChannelRef, progressMap } = React.useContext(MyContext);
+    let { username, roomName, isJoined, onlineUsersMap, dataChannelRef, gameStartsInCountDown, setGameStartsInCountDown, 
+        progressMap, gameEndsInCountdownRef, startGame, setStartGame, isReady, setIsReady, isReadyRef,
+        startCountdown, setStartCountdown, gameCountDown, sendMessageToAllConnections,
+        setGameCountDown, startGameRef, startCountDownRef } = React.useContext(MyContext);
     const navigate = useNavigate();
     let [text, setText] = useState('');
     let [error, setError] = useState(false);
     let [finished, setFinished] = useState(false);
-    let [isReady, setIsReady] = useState(false);
-    let [startCountdown, setStartCountdown] = useState(false);
-    let [startGame, setStartGame] = useState(false);
+    // let [isReady, setIsReady] = useState(false);
+    // let [startCountdown, setStartCountdown] = useState(false);
+    // let [startGame, setStartGame] = useState(false);
     let [timeTaken, setTimeTaken] = useState(0);
     let [percentageCompleted, setPercentageCompleted] = useState(0);
+    // let [gameCountdown, setGameCountDown] = useState(240);
 
     useEffect(() => {
         console.log("useEffect typingGame:")
@@ -38,9 +42,21 @@ function TypingGame() {
     useEffect(() => {
         checkIfEveryonesReady();
     }, [JSON.stringify(onlineUsersMap), isReady])
+    
+    useEffect(()=>{
+        startGameRef.current = startGame;
+    }, [startGame])
+
+    useEffect(()=>{
+        startCountDownRef.current = startCountdown
+    }, [startCountdown])
+
+    useEffect(()=>{
+        isReadyRef.current = isReady
+    },[isReady])
 
     const checkIfEveryonesReady = () => {
-        if (!isReady)
+        if (!isReady || startCountdown || startGame)
             return;
         if (Object.keys(onlineUsersMap).length) {
             console.log(onlineUsersMap)
@@ -55,7 +71,7 @@ function TypingGame() {
     const broadcastProgressInfo = () => {
         let progressValue = (text.length / paragraph.length) * 100;
         setPercentageCompleted(progressValue);
-        sendMessageToAllConnecions({ username, info: 'PROGRESS', progressStats: { percentageCompleted: progressValue } });
+        sendMessageToAllConnections({ username, info: 'PROGRESS', progressStats: { percentageCompleted: progressValue } });
     }
 
     const handleChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -76,26 +92,25 @@ function TypingGame() {
         // setProgressBarVal(randomNumber);
         console.log('clicked')
         setIsReady(true);
-        sendMessageToAllConnecions({ status: 'READY', username, info: 'STATUS' })
+        sendMessageToAllConnections({ status: 'READY', username, info: 'STATUS' })
     }
 
-    const sendMessageToAllConnecions = (message: Message) => {
-        if (dataChannelRef.current) {
-            const messageData = JSON.stringify(message);
-            for (let peerId in dataChannelRef.current) {
-                if (dataChannelRef.current[peerId].readyState === 'open') {
-                    dataChannelRef.current[peerId].send(messageData);
-                }
-                else {
-                    console.warn('Data channel is not open');
-                }
+    
+
+    const startGlobalCountdown = () => {
+        let interval = setInterval(() => {
+            gameEndsInCountdownRef.current -= 1;
+            if (gameEndsInCountdownRef.current <= 0) {
+              clearInterval(interval);
+              // Countdown has ended, perform any necessary actions
             }
-        }
-    };
+          }, 1000);
+    }
 
     const handleTimerEnd = () => {
         setStartGame(true);
         setStartCountdown(false);
+        startGlobalCountdown();
     }
 
     const getTimeTaken = (time: number) => {
@@ -164,8 +179,8 @@ function TypingGame() {
                     >
                         I'm Ready!
                     </button>}
-                    {startCountdown && (<CountdownTimer onTimerEnd={handleTimerEnd} stop={false} timeLimit={5} text='Game starts in: ' />)}
-                    {startGame && <CountdownTimer onTimerEnd={getTimeTaken} stop={finished} timeLimit={240} text='Countdown: ' />}
+                    {startCountdown && (<CountdownTimer onTimerEnd={handleTimerEnd} stop={false}  text='Game starts in: ' countdown={gameStartsInCountDown} setCountdown={setGameStartsInCountDown}/>)}
+                    {startGame && <CountdownTimer onTimerEnd={getTimeTaken} stop={finished} countdown={gameCountDown} setCountdown={setGameCountDown} text='Countdown: ' />}
                 </div>
                 <div className='w-[20vw]'>
                     {startGame && <ProgressBarsContainer dictionary={progressMap} username={username} percentageCompleted={percentageCompleted} />}
@@ -201,9 +216,8 @@ const ProgressBarsContainer: React.FC<ProgressBarsContainerProps> = ({ dictionar
         </div>);
 }
 
-const CountdownTimer = ({ stop, onTimerEnd, timeLimit, text = '' }: { stop: boolean; onTimerEnd: (elapsedTime: number) => void, timeLimit: number, text?: string }) => {
+const CountdownTimer = ({ stop, onTimerEnd, text = '', countdown, setCountdown }: { stop: boolean; onTimerEnd: (elapsedTime: number) => void, text?: string, countdown : number, setCountdown : Dispatch<SetStateAction<number>>}) => {
     console.log('rerendering countdownTimer....')
-    const [countdown, setCountdown] = useState(timeLimit);
     const startTime = useRef(Date.now());
 
     useEffect(() => {
@@ -231,5 +245,7 @@ const CountdownTimer = ({ stop, onTimerEnd, timeLimit, text = '' }: { stop: bool
         </div>
     );
 };
+
+
 
 export default TypingGame;

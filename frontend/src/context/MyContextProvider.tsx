@@ -1,7 +1,7 @@
-import React, { useEffect } from "react";
+import React, { MutableRefObject, useEffect } from "react";
 import { useState, useRef } from "react";
 import MyContext from "./myContext";
-import { Message, PeerIdProgressMap } from "../interfaces/all.interface";
+import { Message, MyContextType, PeerChannelsMap, PeerIdProgressMap } from "../interfaces/all.interface";
 
 function MyContextProvider({ children }: any) {
     console.log('rendering MyContextProvider:')
@@ -13,15 +13,37 @@ function MyContextProvider({ children }: any) {
     const [roomName, setRoomName] = useState('');
     const [username, setUsername] = useState('');
     const [isJoined, setIsJoined] = useState(false);
-    const [message, setMessage] = useState('');
     const [messages, setMessages] = useState<Message[]>([]);
     const peerConnectionRef = useRef({});
-    const dataChannelRef = useRef({});
+    const dataChannelRef = useRef<PeerChannelsMap>({});
     let [onlineUsersMap, setOnlineUsersMap] = useState({});
     const [progressMap, setProgressMap] = useState<PeerIdProgressMap>({});
+    const gameEndsInCountdownRef = useRef(240);
+    let [isReady, setIsReady] = useState(false);
+    let [startGame, setStartGame] = useState(false);
+    let [gameStartsInCountDown, setGameStartsInCountDown] = useState(5);
+    let [startCountdown, setStartCountdown] = useState(false);
+    let [gameCountDown, setGameCountDown] = useState(240);
+    const startGameRef = useRef(false);
+    const startCountDownRef = useRef(false);
+    const isReadyRef = useRef(false);
+
+    const sendMessageToAllConnections = (message: Message) => {
+        if (dataChannelRef.current) {
+            const messageData = JSON.stringify(message);
+            for (let peerId in dataChannelRef.current) {
+                if (dataChannelRef.current[peerId].readyState === 'open') {
+                    dataChannelRef.current[peerId].send(messageData);
+                }
+                else {
+                    console.warn('Data channel is not open');
+                }
+            }
+        }
+    };
 
     // Define the context value
-    const contextValue = {
+    const contextValue : MyContextType = {
         socket,
         setSocket,
         roomName,
@@ -30,8 +52,6 @@ function MyContextProvider({ children }: any) {
         setUsername,
         isJoined,
         setIsJoined,
-        message,
-        setMessage,
         messages,
         setMessages,
         peerConnectionRef,
@@ -39,7 +59,22 @@ function MyContextProvider({ children }: any) {
         onlineUsersMap,
         setOnlineUsersMap,
         progressMap,
-        setProgressMap
+        setProgressMap,
+        gameEndsInCountdownRef,
+        isReady,
+        setIsReady,
+        startGame,
+        setStartGame,
+        gameStartsInCountDown,
+        setGameStartsInCountDown,
+        startCountdown,
+        setStartCountdown,
+        gameCountDown,
+        setGameCountDown,
+        startGameRef,
+        startCountDownRef,
+        isReadyRef,
+        sendMessageToAllConnections
     };
 
 

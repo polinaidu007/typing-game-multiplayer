@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import MyContext from '../context/myContext';
 import { useNavigate } from 'react-router-dom';
 import { Message, ProgressBarsContainerProps, ProgressItem, TimerProps } from '../interfaces/all.interface';
@@ -99,7 +99,7 @@ function TypingGame() {
     }
 
     const getTimeTaken = (time: number) => {
-        setTimeTaken(time);
+        setTimeTaken(time / 1000);
     }
 
     return (
@@ -164,8 +164,8 @@ function TypingGame() {
                     >
                         I'm Ready!
                     </button>}
-                    {startCountdown && (<CountdownTimer onTimerEnd={handleTimerEnd} />)}
-                    {startGame && <Timer stop={finished} onTimeChange={getTimeTaken} />}
+                    {startCountdown && (<CountdownTimer onTimerEnd={handleTimerEnd} stop={false} timeLimit={5} text='Game starts in: ' />)}
+                    {startGame && <CountdownTimer onTimerEnd={getTimeTaken} stop={finished} timeLimit={240} text='Countdown: ' />}
                 </div>
                 <div className='w-[20vw]'>
                     {startGame && <ProgressBarsContainer dictionary={progressMap} username={username} percentageCompleted={percentageCompleted} />}
@@ -201,61 +201,35 @@ const ProgressBarsContainer: React.FC<ProgressBarsContainerProps> = ({ dictionar
         </div>);
 }
 
-const CountdownTimer = ({ onTimerEnd }: { onTimerEnd: () => void }) => {
-    const [countdown, setCountdown] = useState(5);
+const CountdownTimer = ({ stop, onTimerEnd, timeLimit, text = '' }: { stop: boolean; onTimerEnd: (elapsedTime: number) => void, timeLimit: number, text?: string }) => {
+    console.log('rerendering countdownTimer....')
+    const [countdown, setCountdown] = useState(timeLimit);
+    const startTime = useRef(Date.now());
 
     useEffect(() => {
-        if (countdown > 0) {
-            const timer = setTimeout(() => {
-                setCountdown(prevCountdown => prevCountdown - 1);
+        let timer: ReturnType<typeof setTimeout>;
+        if (stop || countdown <= 0) {
+            const elapsedTime = Date.now() - startTime.current;
+            onTimerEnd(elapsedTime);
+        } else if (countdown > 0) {
+            timer = setTimeout(() => {
+                setCountdown((prevCountdown) => prevCountdown - 1);
             }, 1000);
 
-            return () => clearTimeout(timer);
-        } else {
-            onTimerEnd(); // Invoke the callback when the countdown reaches zero
         }
-    }, [countdown, onTimerEnd]);
+        return () => clearTimeout(timer);
+
+    }, [countdown, stop]);
 
     return (
         <div className="bg-gray-200 p-2 rounded mt-3">
             {countdown === 0 ? (
                 <span className="text-red-500">Time is up!</span>
             ) : (
-                <span className="text-gray-700">Game starts in: {countdown}</span>
+                <span className="text-gray-700">{text}{countdown}</span>
             )}
         </div>
     );
 };
-
-const Timer: React.FC<TimerProps> = ({ stop, onTimeChange }) => {
-    const [time, setTime] = useState(0);
-    const timerRef = React.useRef<NodeJS.Timeout | null>(null);
-
-    useEffect(() => {
-        timerRef.current = setInterval(() => {
-            setTime(prevTime => prevTime + 1);
-        }, 1000);
-
-        return () => {
-            if (timerRef.current) {
-                clearInterval(timerRef.current);
-            }
-        };
-    }, []);
-
-    useEffect(() => {
-        if (stop) {
-            if (timerRef.current) {
-                clearInterval(timerRef.current);
-            }
-            onTimeChange(time);
-        }
-    }, [stop]);
-
-    return <div>Time: {time}</div>;
-};
-
-
-
 
 export default TypingGame;

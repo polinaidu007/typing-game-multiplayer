@@ -10,6 +10,10 @@ export interface Message {
   progressStats ?: {
     percentageCompleted ?: number;
     timeTakenToComplete ?: number;
+  };
+  initialInfo ?: {
+    gameTimeLeft ?: number;
+    gameStartsIn ?: number;
   }
 }
 
@@ -63,6 +67,8 @@ export interface MyContextType {
   setOnlineUsersMap : Dispatch<SetStateAction<PeerIdUsersMap>>;
   progressMap: PeerIdProgressMap;
   setProgressMap : Dispatch<SetStateAction<PeerIdProgressMap>>;
+  isReady : boolean;
+  setIsReady : Dispatch<SetStateAction<boolean>>;
 }
 
 type OnTimeChangeCallback = (time: number) => void;

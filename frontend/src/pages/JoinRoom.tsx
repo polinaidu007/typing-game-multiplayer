@@ -67,7 +67,7 @@ function JoinRoom() {
         const dataChannel = dataChannelRef.current[peerId];
         dataChannel.onopen = () => {
             console.log('Data Channel is open');
-            announceOnlineStatus(peerId);
+            announceInitialInfo(peerId);
         };
         dataChannel.onmessage = (event) => {
             console.log("New msg:", event.data);
@@ -103,7 +103,7 @@ function JoinRoom() {
         };
     };
 
-    const announceOnlineStatus = (peerId: string) => {
+    const announceInitialInfo = (peerId: string) => {
         if (dataChannelRef.current) {
             const obj: Message = { username: usernameRef.current, info: 'ONLINE', peerId }
             const messageData = JSON.stringify(obj);

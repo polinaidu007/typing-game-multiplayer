@@ -82,6 +82,7 @@ export interface MyContextType {
   startCountDownRef : MutableRefObject<boolean>;
   isReadyRef : MutableRefObject<boolean>;
   sendMessageToAllConnections : (msg : Message) => void;
+  startGlobalCountdown : (countdown ?: number) => void;
 
 }
 

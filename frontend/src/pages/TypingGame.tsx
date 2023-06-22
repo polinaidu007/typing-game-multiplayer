@@ -9,7 +9,7 @@ function TypingGame() {
     let { username, roomName, isJoined, onlineUsersMap, dataChannelRef, gameStartsInCountDown, setGameStartsInCountDown, 
         progressMap, gameEndsInCountdownRef, startGame, setStartGame, isReady, setIsReady, isReadyRef,
         startCountdown, setStartCountdown, gameCountDown, sendMessageToAllConnections,
-        setGameCountDown, startGameRef, startCountDownRef } = React.useContext(MyContext);
+        setGameCountDown, startGameRef, startCountDownRef, startGlobalCountdown } = React.useContext(MyContext);
     const navigate = useNavigate();
     let [text, setText] = useState('');
     let [error, setError] = useState(false);
@@ -97,15 +97,6 @@ function TypingGame() {
 
     
 
-    const startGlobalCountdown = () => {
-        let interval = setInterval(() => {
-            gameEndsInCountdownRef.current -= 1;
-            if (gameEndsInCountdownRef.current <= 0) {
-              clearInterval(interval);
-              // Countdown has ended, perform any necessary actions
-            }
-          }, 1000);
-    }
 
     const handleTimerEnd = () => {
         setStartGame(true);
@@ -219,6 +210,7 @@ const ProgressBarsContainer: React.FC<ProgressBarsContainerProps> = ({ dictionar
 const CountdownTimer = ({ stop, onTimerEnd, text = '', countdown, setCountdown }: { stop: boolean; onTimerEnd: (elapsedTime: number) => void, text?: string, countdown : number, setCountdown : Dispatch<SetStateAction<number>>}) => {
     console.log('rerendering countdownTimer....')
     const startTime = useRef(Date.now());
+    const countDownTime = useRef(countdown);
 
     useEffect(() => {
         let timer: ReturnType<typeof setTimeout>;
@@ -227,7 +219,10 @@ const CountdownTimer = ({ stop, onTimerEnd, text = '', countdown, setCountdown }
             onTimerEnd(elapsedTime);
         } else if (countdown > 0) {
             timer = setTimeout(() => {
-                setCountdown((prevCountdown) => prevCountdown - 1);
+                setCountdown((prevCountdown) =>{
+                    let diff = Date.now() - startTime.current
+                    return Math.floor(countDownTime.current - (diff/1000))
+                });
             }, 1000);
 
         }

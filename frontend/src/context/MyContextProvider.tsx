@@ -42,6 +42,17 @@ function MyContextProvider({ children }: any) {
         }
     };
 
+    const startGlobalCountdown = (countdown : number = 240) => {
+        let startTime = Date.now();
+        let interval = setInterval(() => {
+            gameEndsInCountdownRef.current = (countdown - (Date.now()-startTime)/1000);
+            if (gameEndsInCountdownRef.current <= 0) {
+              clearInterval(interval);
+              // Countdown has ended, perform any necessary actions
+            }
+          }, 1000);
+    }
+
     // Define the context value
     const contextValue : MyContextType = {
         socket,
@@ -74,7 +85,8 @@ function MyContextProvider({ children }: any) {
         startGameRef,
         startCountDownRef,
         isReadyRef,
-        sendMessageToAllConnections
+        sendMessageToAllConnections,
+        startGlobalCountdown 
     };
 
 

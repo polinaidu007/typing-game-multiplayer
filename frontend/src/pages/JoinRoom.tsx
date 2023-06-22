@@ -16,7 +16,7 @@ function JoinRoom() {
         peerConnectionRef, dataChannelRef, setOnlineUsersMap, setProgressMap, startGame, startCountdown, 
         gameEndsInCountdownRef, gameStartsInCountDown, isReady, setStartGame, 
         setGameCountDown, setIsReady, isReadyRef,setGameStartsInCountDown, setStartCountdown, 
-        sendMessageToAllConnections,startGameRef, startCountDownRef  } = React.useContext(MyContext);
+        sendMessageToAllConnections,startGameRef, startCountDownRef, startGlobalCountdown  } = React.useContext(MyContext);
     const navigate = useNavigate();
     const usernameRef = React.useRef('');
 
@@ -84,15 +84,17 @@ function JoinRoom() {
                             status: message.status ?? 'WAITING'
                         }
                     }));
-                    if(!startGameRef && !startCountDownRef.current && message?.initialInfo?.gameStartsIn){
+                    if(!startGameRef.current && !startCountDownRef.current && message?.initialInfo?.gameStartsIn){
                         setIsReady(true);
-                        setGameStartsInCountDown(message.initialInfo.gameStartsIn-1);
+                        setGameStartsInCountDown(Math.floor(message.initialInfo.gameStartsIn));
                         setStartCountdown(true);
                         sendMessageToAllConnections({username : usernameRef.current, info : 'STATUS', status : 'READY'})
                     }
                     else if(!startGameRef.current && message?.initialInfo?.gameTimeLeft){
                         setIsReady(true);
-                        setGameCountDown(message?.initialInfo.gameTimeLeft-1);
+                        let ceiled = Math.floor(message?.initialInfo.gameTimeLeft);
+                        setGameCountDown(ceiled);
+                        startGlobalCountdown(ceiled);
                         setStartGame(true);
                         sendMessageToAllConnections({username : usernameRef.current, info : 'STATUS', status : 'READY'})
                     }

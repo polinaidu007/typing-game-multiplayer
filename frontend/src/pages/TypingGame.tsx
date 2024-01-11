@@ -241,6 +241,26 @@ const CountdownTimer = ({ stop, onTimerEnd, text = '', countdown, setCountdown }
     );
 };
 
+const StatsSummary = () => {
+    return (
+        <div className='flex w-[80%] justify-evenly'>
+            <StatItem name='wpm' val="45" />
+            <StatItem name='rank' val="1" />
+            <StatItem name='accuracy' val="97%" />
+            <StatItem name='time' val="100s" />
+        </div>
+    )
+}
+
+const StatItem = ({ name, val }: { name: string, val: string }) => {
+    return (
+        <div className='flex flex-col items-center'>
+            <span className='text-gray-500 font-orbitron text-sm font-semibold'>{name}:</span>
+            <span className='text-[#E2B714] font-orbitron text-5xl font-bold'>{val}</span>
+        </div>
+    )
+}
+
 
 
 export default TypingGame;

@@ -2,6 +2,7 @@ import React, { Dispatch, SetStateAction, useEffect, useRef, useState } from 're
 import MyContext from '../context/myContext';
 import { useNavigate } from 'react-router-dom';
 import { Message, ProgressBarsContainerProps, ProgressItem, TimerProps } from '../interfaces/all.interface';
+import { gameTimeLimit } from '../constants/constants';
 
 let paragraph = `Breakfast, often dubbed the most important meal of the day, fuels the body after a night's rest. Consuming a balanced breakfast with proteins, grains, and fruits enhances concentration and stamina. It also curbs overeating later, aiding weight management. Prioritizing breakfast promotes a healthy lifestyle and contributes to overall well-being.`
 
@@ -98,14 +99,16 @@ function TypingGame() {
     
 
 
-    const handleTimerEnd = () => {
+    const handleInitialTimerEnd = () => {
         setStartGame(true);
         setStartCountdown(false);
         startGlobalCountdown();
     }
 
-    const getTimeTaken = (time: number) => {
+    const onGameFinish = (time: number) => {
+        setStartGame(false);
         setTimeTaken(time / 1000);
+        sendMessageToAllConnections({ username, info: 'PROGRESS', progressStats: { timeTakenToComplete: time/1000 } });
     }
 
     return (
@@ -170,8 +173,9 @@ function TypingGame() {
                     >
                         I'm Ready!
                     </button>}
-                    {startCountdown && (<CountdownTimer onTimerEnd={handleTimerEnd} stop={false}  text='Game starts in: ' countdown={gameStartsInCountDown} setCountdown={setGameStartsInCountDown}/>)}
-                    {startGame && <CountdownTimer onTimerEnd={getTimeTaken} stop={finished} countdown={gameCountDown} setCountdown={setGameCountDown} text='Countdown: ' />}
+                    {startCountdown && (<CountdownTimer onTimerEnd={handleInitialTimerEnd} stop={false}  text='Game starts in: ' countdown={gameStartsInCountDown} setCountdown={setGameStartsInCountDown}/>)}
+                    {startGame && <CountdownTimer onTimerEnd={onGameFinish} stop={finished} countdown={gameCountDown} setCountdown={setGameCountDown} text='Countdown: ' />}
+                    {finished && <StatsSummary timeTaken={timeTaken}/>}
                 </div>
                 <div className='w-[20vw]'>
                     {startGame && <ProgressBarsContainer dictionary={progressMap} username={username} percentageCompleted={percentageCompleted} />}
@@ -241,13 +245,25 @@ const CountdownTimer = ({ stop, onTimerEnd, text = '', countdown, setCountdown }
     );
 };
 
-const StatsSummary = () => {
+const StatsSummary = ({timeTaken} : {timeTaken : number}) => {
+    let { progressMap } = React.useContext(MyContext);
+    let [rank, setRank] = useState(0);
+
+    useEffect(()=>{
+        let currRank = 1;
+        Object.keys(progressMap).map((key)=> {
+            if (progressMap[key]?.timeTakenToComplete ?? gameTimeLimit < timeTaken) 
+                currRank ++;
+        });
+        setRank(currRank);
+    },[]);
+    
     return (
         <div className='flex w-[80%] justify-evenly'>
             <StatItem name='wpm' val="45" />
-            <StatItem name='rank' val="1" />
+            <StatItem name='rank' val={`${rank}`} />
             <StatItem name='accuracy' val="97%" />
-            <StatItem name='time' val="100s" />
+            <StatItem name='time' val={`${timeTaken}s`} />
         </div>
     )
 }

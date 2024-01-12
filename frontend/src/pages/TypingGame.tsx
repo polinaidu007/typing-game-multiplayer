@@ -21,6 +21,7 @@ function TypingGame() {
     let [timeTaken, setTimeTaken] = useState(0);
     let [percentageCompleted, setPercentageCompleted] = useState(0);
     let [showStats, setShowStats] = useState(false);
+    const errKeysTypedCount = useRef(0);
     // let [gameCountdown, setGameCountDown] = useState(240);
 
     useEffect(() => {
@@ -31,6 +32,10 @@ function TypingGame() {
 
     useEffect(() => {
         let lastIdx = text.length - 1;
+
+        if (startGame && text && paragraph[lastIdx] !== text[lastIdx])
+            errKeysTypedCount.current++;
+
         if (text && paragraph[lastIdx] !== text[lastIdx])
             setError(true);
         else {
@@ -183,7 +188,7 @@ function TypingGame() {
                     </button>}
                     {startCountdown && (<CountdownTimer onTimerEnd={handleInitialTimerEnd} stop={false}  text='Game starts in: ' countdown={gameStartsInCountDown} setCountdown={setGameStartsInCountDown}/>)}
                     {startGame && <CountdownTimer onTimerEnd={onGameFinish} stop={finished} countdown={gameCountDown} setCountdown={setGameCountDown} text='Countdown: ' />}
-                    {showStats && <StatsSummary timeTaken={timeTaken} textLen={paragraph.length}/>}
+                    {showStats && <StatsSummary timeTaken={timeTaken} textLen={paragraph.length} errKeysTypedCount={errKeysTypedCount.current}/>}
                 </div>
                 <div className='w-[20vw]'>
                     {startGame && <ProgressBarsContainer dictionary={progressMap} username={username} percentageCompleted={percentageCompleted} />}
@@ -253,14 +258,16 @@ const CountdownTimer = ({ stop, onTimerEnd, text = '', countdown, setCountdown }
     );
 };
 
-const StatsSummary = ({timeTaken, textLen} : {timeTaken : number, textLen : number}) => {
+const StatsSummary = ({ timeTaken, textLen, errKeysTypedCount }: { timeTaken: number, textLen: number, errKeysTypedCount: number}) => {
     let { progressMap } = React.useContext(MyContext);
     let [rank, setRank] = useState(0);
     let [wpm, setWpm] = useState(0);
+    let [accuracy, setAccuracy] = useState(0);
 
     useEffect(()=>{
         setRank(calculateRank());
         setWpm(calculateWpm(textLen));
+        setAccuracy(calculateAccuracy());
     },[]);
 
     const calculateWpm = (textLen : number) : number => {
@@ -275,12 +282,16 @@ const StatsSummary = ({timeTaken, textLen} : {timeTaken : number, textLen : numb
         });
         return currRank;
     }
+
+    const calculateAccuracy = () : number => {
+        return Math.floor((100 - (errKeysTypedCount / (textLen + errKeysTypedCount) * 100)));
+    }
     
     return (
         <div className='flex w-[80%] justify-evenly'>
             <StatItem name='wpm' val={`${wpm}`} />
             <StatItem name='rank' val={`${rank}`} />
-            <StatItem name='accuracy' val="97%" />
+            <StatItem name='accuracy' val={`${accuracy}%`} />
             <StatItem name='time' val={`${Math.ceil(timeTaken)}s`} />
         </div>
     )

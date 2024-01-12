@@ -20,6 +20,7 @@ function TypingGame() {
     // let [startGame, setStartGame] = useState(false);
     let [timeTaken, setTimeTaken] = useState(0);
     let [percentageCompleted, setPercentageCompleted] = useState(0);
+    let [showStats, setShowStats] = useState(false);
     // let [gameCountdown, setGameCountDown] = useState(240);
 
     useEffect(() => {
@@ -55,6 +56,13 @@ function TypingGame() {
     useEffect(()=>{
         isReadyRef.current = isReady
     },[isReady])
+
+    useEffect(()=>{
+        if(timeTaken > 0)
+            setShowStats(true);
+    }, [timeTaken]);
+
+
 
     const checkIfEveryonesReady = () => {
         if (!isReady || startCountdown || startGame)
@@ -175,7 +183,7 @@ function TypingGame() {
                     </button>}
                     {startCountdown && (<CountdownTimer onTimerEnd={handleInitialTimerEnd} stop={false}  text='Game starts in: ' countdown={gameStartsInCountDown} setCountdown={setGameStartsInCountDown}/>)}
                     {startGame && <CountdownTimer onTimerEnd={onGameFinish} stop={finished} countdown={gameCountDown} setCountdown={setGameCountDown} text='Countdown: ' />}
-                    {finished && <StatsSummary timeTaken={timeTaken}/>}
+                    {showStats && <StatsSummary timeTaken={timeTaken} textLen={paragraph.length}/>}
                 </div>
                 <div className='w-[20vw]'>
                     {startGame && <ProgressBarsContainer dictionary={progressMap} username={username} percentageCompleted={percentageCompleted} />}
@@ -245,25 +253,35 @@ const CountdownTimer = ({ stop, onTimerEnd, text = '', countdown, setCountdown }
     );
 };
 
-const StatsSummary = ({timeTaken} : {timeTaken : number}) => {
+const StatsSummary = ({timeTaken, textLen} : {timeTaken : number, textLen : number}) => {
     let { progressMap } = React.useContext(MyContext);
     let [rank, setRank] = useState(0);
+    let [wpm, setWpm] = useState(0);
 
     useEffect(()=>{
-        let currRank = 1;
-        Object.keys(progressMap).map((key)=> {
-            if (progressMap[key]?.timeTakenToComplete ?? gameTimeLimit < timeTaken) 
-                currRank ++;
-        });
-        setRank(currRank);
+        setRank(calculateRank());
+        setWpm(calculateWpm(textLen));
     },[]);
+
+    const calculateWpm = (textLen : number) : number => {
+        return Math.floor((textLen / 5) / (timeTaken / 60));
+    }
+
+    const calculateRank = () : number => {
+        let currRank = 1;
+        Object.keys(progressMap).map((key) => {
+            if (progressMap[key]?.timeTakenToComplete ?? gameTimeLimit < timeTaken)
+                currRank++;
+        });
+        return currRank;
+    }
     
     return (
         <div className='flex w-[80%] justify-evenly'>
-            <StatItem name='wpm' val="45" />
+            <StatItem name='wpm' val={`${wpm}`} />
             <StatItem name='rank' val={`${rank}`} />
             <StatItem name='accuracy' val="97%" />
-            <StatItem name='time' val={`${timeTaken}s`} />
+            <StatItem name='time' val={`${Math.ceil(timeTaken)}s`} />
         </div>
     )
 }

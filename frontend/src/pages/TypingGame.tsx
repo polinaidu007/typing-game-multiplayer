@@ -1,16 +1,15 @@
 import React, { Dispatch, SetStateAction, useEffect, useRef, useState } from 'react';
 import MyContext from '../context/myContext';
 import { useNavigate } from 'react-router-dom';
-import { Message, ProgressBarsContainerProps, ProgressItem, TimerProps } from '../interfaces/all.interface';
+import { ProgressBarsContainerProps, ProgressItem } from '../interfaces/all.interface';
 import { gameTimeLimit } from '../constants/constants';
 
-let paragraph = `Breakfast, often dubbed the most important meal of the day, fuels the body after a night's rest. Consuming a balanced breakfast with proteins, grains, and fruits enhances concentration and stamina. It also curbs overeating later, aiding weight management. Prioritizing breakfast promotes a healthy lifestyle and contributes to overall well-being.`
 
 function TypingGame() {
-    let { username, roomName, isJoined, onlineUsersMap, dataChannelRef, gameStartsInCountDown, setGameStartsInCountDown, 
-        progressMap, gameEndsInCountdownRef, startGame, setStartGame, isReady, setIsReady, isReadyRef,
+    let { username, roomName, isJoined, onlineUsersMap, gameStartsInCountDown, setGameStartsInCountDown, 
+        progressMap, startGame, setStartGame, isReady, setIsReady, isReadyRef,
         startCountdown, setStartCountdown, gameCountDown, sendMessageToAllConnections,
-        setGameCountDown, startGameRef, startCountDownRef, startGlobalCountdown } = React.useContext(MyContext);
+        setGameCountDown, startGameRef, startCountDownRef, startGlobalCountdown, paragraph } = React.useContext(MyContext);
     const navigate = useNavigate();
     let [text, setText] = useState('');
     let [error, setError] = useState(false);
@@ -36,9 +35,10 @@ function TypingGame() {
         if (startGame && text && paragraph[lastIdx] !== text[lastIdx])
             errKeysTypedCount.current++;
 
-        if (text && paragraph[lastIdx] !== text[lastIdx])
+        if (startGame && text && paragraph[lastIdx] !== text[lastIdx])
             setError(true);
-        else {
+
+        else if(startGame) {
             setError(false);
             broadcastProgressInfo()
             if (paragraph.length === text.length)

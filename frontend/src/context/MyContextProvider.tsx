@@ -28,6 +28,7 @@ function MyContextProvider({ children }: any) {
     const startGameRef = useRef(false);
     const startCountDownRef = useRef(false);
     const isReadyRef = useRef(false);
+    let [paragraph, setParagraph] = useState('');
 
     const sendMessageToAllConnections = (message: Message) => {
         if (dataChannelRef.current) {
@@ -87,7 +88,9 @@ function MyContextProvider({ children }: any) {
         startCountDownRef,
         isReadyRef,
         sendMessageToAllConnections,
-        startGlobalCountdown 
+        startGlobalCountdown,
+        paragraph,
+        setParagraph
     };
 
 

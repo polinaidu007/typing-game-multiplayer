@@ -13,10 +13,10 @@ function JoinRoom() {
         roomName, setRoomName,
         setIsJoined,
         setMessages,
-        peerConnectionRef, dataChannelRef, setOnlineUsersMap, setProgressMap, startGame, startCountdown, 
-        gameEndsInCountdownRef, gameStartsInCountDown, isReady, setStartGame, 
+        peerConnectionRef, dataChannelRef, setOnlineUsersMap, setProgressMap, 
+        gameEndsInCountdownRef, gameStartsInCountDown, setStartGame, 
         setGameCountDown, setIsReady, isReadyRef,setGameStartsInCountDown, setStartCountdown, 
-        sendMessageToAllConnections,startGameRef, startCountDownRef, startGlobalCountdown  } = React.useContext(MyContext);
+        sendMessageToAllConnections,startGameRef, startCountDownRef, startGlobalCountdown, setParagraph  } = React.useContext(MyContext);
     const navigate = useNavigate();
     const usernameRef = React.useRef('');
 
@@ -56,6 +56,11 @@ function JoinRoom() {
             }
             peerConnectionRef.current = {};
         });
+
+        socket?.on('paragraph-res', ({paragraph} : {paragraph : string})=> {
+            console.log('paragraph response', paragraph);
+            setParagraph(paragraph);
+        })
     }, [socket])
 
     const onClickJoinRoom = async () => {

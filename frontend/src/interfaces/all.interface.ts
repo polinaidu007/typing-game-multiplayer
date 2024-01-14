@@ -83,7 +83,8 @@ export interface MyContextType {
   isReadyRef : MutableRefObject<boolean>;
   sendMessageToAllConnections : (msg : Message) => void;
   startGlobalCountdown : (countdown ?: number) => void;
-
+  paragraph : string;
+  setParagraph :  Dispatch<SetStateAction<string>>
 }
 
 type OnTimeChangeCallback = (time: number) => void;

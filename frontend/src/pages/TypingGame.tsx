@@ -2,6 +2,7 @@ import React, { Dispatch, SetStateAction, useEffect, useRef, useState } from 're
 import MyContext from '../context/myContext';
 import { useNavigate } from 'react-router-dom';
 import { Message, ProgressBarsContainerProps, ProgressItem, TimerProps } from '../interfaces/all.interface';
+import { gameTimeLimit } from '../constants/constants';
 
 let paragraph = `Breakfast, often dubbed the most important meal of the day, fuels the body after a night's rest. Consuming a balanced breakfast with proteins, grains, and fruits enhances concentration and stamina. It also curbs overeating later, aiding weight management. Prioritizing breakfast promotes a healthy lifestyle and contributes to overall well-being.`
 
@@ -19,6 +20,8 @@ function TypingGame() {
     // let [startGame, setStartGame] = useState(false);
     let [timeTaken, setTimeTaken] = useState(0);
     let [percentageCompleted, setPercentageCompleted] = useState(0);
+    let [showStats, setShowStats] = useState(false);
+    const errKeysTypedCount = useRef(0);
     // let [gameCountdown, setGameCountDown] = useState(240);
 
     useEffect(() => {
@@ -29,6 +32,10 @@ function TypingGame() {
 
     useEffect(() => {
         let lastIdx = text.length - 1;
+
+        if (startGame && text && paragraph[lastIdx] !== text[lastIdx])
+            errKeysTypedCount.current++;
+
         if (text && paragraph[lastIdx] !== text[lastIdx])
             setError(true);
         else {
@@ -54,6 +61,13 @@ function TypingGame() {
     useEffect(()=>{
         isReadyRef.current = isReady
     },[isReady])
+
+    useEffect(()=>{
+        if(timeTaken > 0)
+            setShowStats(true);
+    }, [timeTaken]);
+
+
 
     const checkIfEveryonesReady = () => {
         if (!isReady || startCountdown || startGame)
@@ -98,14 +112,16 @@ function TypingGame() {
     
 
 
-    const handleTimerEnd = () => {
+    const handleInitialTimerEnd = () => {
         setStartGame(true);
         setStartCountdown(false);
         startGlobalCountdown();
     }
 
-    const getTimeTaken = (time: number) => {
+    const onGameFinish = (time: number) => {
+        setStartGame(false);
         setTimeTaken(time / 1000);
+        sendMessageToAllConnections({ username, info: 'PROGRESS', progressStats: { timeTakenToComplete: time/1000 } });
     }
 
     return (
@@ -170,8 +186,9 @@ function TypingGame() {
                     >
                         I'm Ready!
                     </button>}
-                    {startCountdown && (<CountdownTimer onTimerEnd={handleTimerEnd} stop={false}  text='Game starts in: ' countdown={gameStartsInCountDown} setCountdown={setGameStartsInCountDown}/>)}
-                    {startGame && <CountdownTimer onTimerEnd={getTimeTaken} stop={finished} countdown={gameCountDown} setCountdown={setGameCountDown} text='Countdown: ' />}
+                    {startCountdown && (<CountdownTimer onTimerEnd={handleInitialTimerEnd} stop={false}  text='Game starts in: ' countdown={gameStartsInCountDown} setCountdown={setGameStartsInCountDown}/>)}
+                    {startGame && <CountdownTimer onTimerEnd={onGameFinish} stop={finished} countdown={gameCountDown} setCountdown={setGameCountDown} text='Countdown: ' />}
+                    {showStats && <StatsSummary timeTaken={timeTaken} textLen={paragraph.length} errKeysTypedCount={errKeysTypedCount.current}/>}
                 </div>
                 <div className='w-[20vw]'>
                     {startGame && <ProgressBarsContainer dictionary={progressMap} username={username} percentageCompleted={percentageCompleted} />}
@@ -240,6 +257,54 @@ const CountdownTimer = ({ stop, onTimerEnd, text = '', countdown, setCountdown }
         </div>
     );
 };
+
+const StatsSummary = ({ timeTaken, textLen, errKeysTypedCount }: { timeTaken: number, textLen: number, errKeysTypedCount: number}) => {
+    let { progressMap } = React.useContext(MyContext);
+    let [rank, setRank] = useState(0);
+    let [wpm, setWpm] = useState(0);
+    let [accuracy, setAccuracy] = useState(0);
+
+    useEffect(()=>{
+        setRank(calculateRank());
+        setWpm(calculateWpm(textLen));
+        setAccuracy(calculateAccuracy());
+    },[]);
+
+    const calculateWpm = (textLen : number) : number => {
+        return Math.floor((textLen / 5) / (timeTaken / 60));
+    }
+
+    const calculateRank = () : number => {
+        let currRank = 1;
+        Object.keys(progressMap).map((key) => {
+            if (progressMap[key]?.timeTakenToComplete ?? gameTimeLimit < timeTaken)
+                currRank++;
+        });
+        return currRank;
+    }
+
+    const calculateAccuracy = () : number => {
+        return Math.floor((100 - (errKeysTypedCount / (textLen + errKeysTypedCount) * 100)));
+    }
+    
+    return (
+        <div className='flex w-[80%] justify-evenly'>
+            <StatItem name='wpm' val={`${wpm}`} />
+            <StatItem name='rank' val={`${rank}`} />
+            <StatItem name='accuracy' val={`${accuracy}%`} />
+            <StatItem name='time' val={`${Math.ceil(timeTaken)}s`} />
+        </div>
+    )
+}
+
+const StatItem = ({ name, val }: { name: string, val: string }) => {
+    return (
+        <div className='flex flex-col items-center'>
+            <span className='text-gray-500 font-orbitron text-sm font-semibold'>{name}:</span>
+            <span className='text-[#E2B714] font-orbitron text-5xl font-bold'>{val}</span>
+        </div>
+    )
+}
 
 
 

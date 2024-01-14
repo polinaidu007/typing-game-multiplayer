@@ -2,6 +2,7 @@ import React, { MutableRefObject, useEffect } from "react";
 import { useState, useRef } from "react";
 import MyContext from "./myContext";
 import { Message, MyContextType, PeerChannelsMap, PeerIdProgressMap } from "../interfaces/all.interface";
+import { gameTimeLimit } from "../constants/constants";
 
 function MyContextProvider({ children }: any) {
     console.log('rendering MyContextProvider:')
@@ -18,12 +19,12 @@ function MyContextProvider({ children }: any) {
     const dataChannelRef = useRef<PeerChannelsMap>({});
     let [onlineUsersMap, setOnlineUsersMap] = useState({});
     const [progressMap, setProgressMap] = useState<PeerIdProgressMap>({});
-    const gameEndsInCountdownRef = useRef(240);
+    const gameEndsInCountdownRef = useRef(gameTimeLimit);
     let [isReady, setIsReady] = useState(false);
     let [startGame, setStartGame] = useState(false);
     let [gameStartsInCountDown, setGameStartsInCountDown] = useState(5);
     let [startCountdown, setStartCountdown] = useState(false);
-    let [gameCountDown, setGameCountDown] = useState(240);
+    let [gameCountDown, setGameCountDown] = useState(gameTimeLimit);
     const startGameRef = useRef(false);
     const startCountDownRef = useRef(false);
     const isReadyRef = useRef(false);
@@ -42,7 +43,7 @@ function MyContextProvider({ children }: any) {
         }
     };
 
-    const startGlobalCountdown = (countdown : number = 240) => {
+    const startGlobalCountdown = (countdown : number = gameTimeLimit) => {
         let startTime = Date.now();
         let interval = setInterval(() => {
             gameEndsInCountdownRef.current = (countdown - (Date.now()-startTime)/1000);

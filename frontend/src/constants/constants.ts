@@ -1,0 +1,1 @@
+export const gameTimeLimit : number = 240;

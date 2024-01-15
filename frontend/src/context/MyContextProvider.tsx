@@ -30,6 +30,8 @@ function MyContextProvider({ children }: any) {
     const isReadyRef = useRef(false);
     let [paragraph, setParagraph] = useState('');
     let [gameFinished, setGameFinished] = useState(false);
+    const gameTimeMidJoinRef = useRef(gameTimeLimit);
+    let [gameCompletionTime, setGameCompletionTime] = useState(0);
 
     const sendMessageToAllConnections = (message: Message) => {
         if (dataChannelRef.current) {
@@ -93,7 +95,10 @@ function MyContextProvider({ children }: any) {
         paragraph,
         setParagraph,
         gameFinished,
-        setGameFinished
+        setGameFinished,
+        gameTimeMidJoinRef,
+        gameCompletionTime,
+        setGameCompletionTime
     };
 
 

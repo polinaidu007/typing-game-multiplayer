@@ -9,7 +9,7 @@ function TypingGame() {
     let { username, roomName, isJoined, onlineUsersMap, gameStartsInCountDown, setGameStartsInCountDown, 
         progressMap, startGame, setStartGame, isReady, setIsReady, isReadyRef,
         startCountdown, setStartCountdown, gameCountDown, sendMessageToAllConnections,
-        setGameCountDown, startGameRef, startCountDownRef, startGlobalCountdown, paragraph } = React.useContext(MyContext);
+        setGameCountDown, startGameRef, startCountDownRef, startGlobalCountdown, paragraph, gameFinished, setGameFinished } = React.useContext(MyContext);
     const navigate = useNavigate();
     let [text, setText] = useState('');
     let [error, setError] = useState(false);
@@ -42,7 +42,7 @@ function TypingGame() {
             setError(false);
             broadcastProgressInfo()
             if (paragraph.length === text.length)
-                setFinished(true);
+                setGameFinished(true);
         }
     }, [text])
 
@@ -70,7 +70,7 @@ function TypingGame() {
 
 
     const checkIfEveryonesReady = () => {
-        if (!isReady || startCountdown || startGame)
+        if (!isReady || startCountdown || startGame || gameFinished)
             return;
         if (Object.keys(onlineUsersMap).length) {
             console.log(onlineUsersMap)
@@ -171,14 +171,14 @@ function TypingGame() {
                     <div className='w-[80%] border border-gray-300 p-4 m-2'>
                         <textarea placeholder='start typing...' className='font-space-mono w-full h-60 focus:outline-none'
                             value={text}
-                            disabled={finished}
+                            disabled={gameFinished}
                             onChange={handleChange}
                             onKeyDown={handleKeyDown}
                         />
                     </div>
 
                     <span className='text-red-500 h-3 font-semibold'>{error && `You mistyped the last letter. Correct it to continue.`}</span>
-                    <span className='text-green-500 h-3 font-semibold mb-4'>{finished && `Congrats! You've completed in ${timeTaken} seconds.`}</span>
+                    <span className='text-green-500 h-3 font-semibold mb-4'>{gameFinished && `Congrats! You've completed in ${timeTaken} seconds.`}</span>
                     {!startGame && <button
                         className={`bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded ${isReady ? 'disabled:opacity-50 cursor-not-allowed' : ''}`}
                         disabled={isReady}
@@ -187,7 +187,7 @@ function TypingGame() {
                         I'm Ready!
                     </button>}
                     {startCountdown && (<CountdownTimer onTimerEnd={handleInitialTimerEnd} stop={false}  text='Game starts in: ' countdown={gameStartsInCountDown} setCountdown={setGameStartsInCountDown}/>)}
-                    {startGame && <CountdownTimer onTimerEnd={onGameFinish} stop={finished} countdown={gameCountDown} setCountdown={setGameCountDown} text='Countdown: ' />}
+                    {startGame && <CountdownTimer onTimerEnd={onGameFinish} stop={gameFinished} countdown={gameCountDown} setCountdown={setGameCountDown} text='Countdown: ' />}
                     {showStats && <StatsSummary timeTaken={timeTaken} textLen={paragraph.length} errKeysTypedCount={errKeysTypedCount.current}/>}
                 </div>
                 <div className='w-[20vw]'>

@@ -84,7 +84,9 @@ export interface MyContextType {
   sendMessageToAllConnections : (msg : Message) => void;
   startGlobalCountdown : (countdown ?: number) => void;
   paragraph : string;
-  setParagraph :  Dispatch<SetStateAction<string>>
+  setParagraph :  Dispatch<SetStateAction<string>>;
+  gameFinished : boolean;
+  setGameFinished : Dispatch<SetStateAction<boolean>>;
 }
 
 type OnTimeChangeCallback = (time: number) => void;

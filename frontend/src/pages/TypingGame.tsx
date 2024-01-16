@@ -9,11 +9,10 @@ function TypingGame() {
     let { username, roomName, isJoined, onlineUsersMap, gameStartsInCountDown, setGameStartsInCountDown, 
         progressMap, startGame, setStartGame, isReady, setIsReady, isReadyRef,
         startCountdown, setStartCountdown, gameCountDown, sendMessageToAllConnections,
-        setGameCountDown, startGameRef, startCountDownRef, startGlobalCountdown, paragraph, gameFinished, setGameFinished } = React.useContext(MyContext);
+        setGameCountDown, paragraph, gameFinished, setGameFinished, socket } = React.useContext(MyContext);
     const navigate = useNavigate();
     let [text, setText] = useState('');
     let [error, setError] = useState(false);
-    let [finished, setFinished] = useState(false);
     // let [isReady, setIsReady] = useState(false);
     // let [startCountdown, setStartCountdown] = useState(false);
     // let [startGame, setStartGame] = useState(false);
@@ -49,14 +48,6 @@ function TypingGame() {
     useEffect(() => {
         checkIfEveryonesReady();
     }, [JSON.stringify(onlineUsersMap), isReady])
-    
-    useEffect(()=>{
-        startGameRef.current = startGame;
-    }, [startGame])
-
-    useEffect(()=>{
-        startCountDownRef.current = startCountdown
-    }, [startCountdown])
 
     useEffect(()=>{
         isReadyRef.current = isReady
@@ -67,6 +58,9 @@ function TypingGame() {
             setShowStats(true);
     }, [timeTaken]);
 
+    const closeSocketConnection = () => {
+        socket?.close();
+    }
 
 
     const checkIfEveryonesReady = () => {
@@ -78,6 +72,7 @@ function TypingGame() {
                 if (onlineUsersMap[peerId].status === 'WAITING')
                     return;
             }
+            closeSocketConnection();
             setStartCountdown(true);
         }
     }
@@ -115,7 +110,6 @@ function TypingGame() {
     const handleInitialTimerEnd = () => {
         setStartGame(true);
         setStartCountdown(false);
-        startGlobalCountdown();
     }
 
     const onGameFinish = (time: number) => {

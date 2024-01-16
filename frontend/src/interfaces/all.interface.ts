@@ -71,18 +71,14 @@ export interface MyContextType {
   setIsReady : Dispatch<SetStateAction<boolean>>;
   startGame : boolean;
   setStartGame : Dispatch<SetStateAction<boolean>>;
-  gameEndsInCountdownRef : MutableRefObject<number>;
   gameStartsInCountDown : number;
   setGameStartsInCountDown : Dispatch<SetStateAction<number>>;
   startCountdown : boolean;
   setStartCountdown : Dispatch<SetStateAction<boolean>>;
   gameCountDown : number;
   setGameCountDown : Dispatch<SetStateAction<number>>;
-  startGameRef : MutableRefObject<boolean>;
-  startCountDownRef : MutableRefObject<boolean>;
   isReadyRef : MutableRefObject<boolean>;
   sendMessageToAllConnections : (msg : Message) => void;
-  startGlobalCountdown : (countdown ?: number) => void;
   paragraph : string;
   setParagraph :  Dispatch<SetStateAction<string>>;
   gameFinished : boolean;

@@ -9,7 +9,7 @@ function TypingGame() {
     let { username, roomName, isJoined, onlineUsersMap, gameStartsInCountDown, setGameStartsInCountDown, 
         progressMap, startGame, setStartGame, isReady, setIsReady, isReadyRef,
         startCountdown, setStartCountdown, gameCountDown, sendMessageToAllConnections,
-        setGameCountDown, paragraph, gameFinished, setGameFinished } = React.useContext(MyContext);
+        setGameCountDown, paragraph, gameFinished, setGameFinished, socket } = React.useContext(MyContext);
     const navigate = useNavigate();
     let [text, setText] = useState('');
     let [error, setError] = useState(false);
@@ -58,6 +58,9 @@ function TypingGame() {
             setShowStats(true);
     }, [timeTaken]);
 
+    const closeSocketConnection = () => {
+        socket?.close();
+    }
 
 
     const checkIfEveryonesReady = () => {
@@ -69,6 +72,7 @@ function TypingGame() {
                 if (onlineUsersMap[peerId].status === 'WAITING')
                     return;
             }
+            closeSocketConnection();
             setStartCountdown(true);
         }
     }

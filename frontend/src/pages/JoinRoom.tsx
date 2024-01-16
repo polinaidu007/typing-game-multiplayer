@@ -16,7 +16,7 @@ function JoinRoom() {
         peerConnectionRef, dataChannelRef, setOnlineUsersMap, setProgressMap, 
         gameEndsInCountdownRef, gameStartsInCountDown, setStartGame, 
         setGameCountDown, setIsReady, isReadyRef,setGameStartsInCountDown, setStartCountdown, 
-        sendMessageToAllConnections,startGameRef, startCountDownRef, startGlobalCountdown, setParagraph, gameFinished  } = React.useContext(MyContext);
+        sendMessageToAllConnections,startGameRef, startCountDownRef, startGlobalCountdown, setParagraph, gameFinished, gameTimeMidJoinRef, gameCompletionTime  } = React.useContext(MyContext);
     const navigate = useNavigate();
     const usernameRef = React.useRef('');
 
@@ -100,7 +100,9 @@ function JoinRoom() {
                         let ceiled = Math.floor(message?.initialInfo.gameTimeLeft);
                         setGameCountDown(ceiled);
                         startGlobalCountdown(ceiled);
+                        gameTimeMidJoinRef.current = ceiled;
                         setStartGame(true);
+                        
                         sendMessageToAllConnections({username : usernameRef.current, info : 'STATUS', status : 'READY'})
                     }
                     break;
@@ -146,6 +148,10 @@ function JoinRoom() {
                 temp.initialInfo = {};
                 temp.initialInfo.gameStartsIn = gameStartsInCountDown;
                 Object.assign(obj, temp);
+            }
+            if (gameFinished) {
+                temp.initialInfo = {};
+                dataChannelRef.current[peerId].send(JSON.stringify({ username: usernameRef.current, info: 'PROGRESS', progressStats: { timeTakenToComplete: gameCompletionTime / 1000 } }))
             }
             const messageData = JSON.stringify(obj);
             if (dataChannelRef.current[peerId].readyState === 'open') {

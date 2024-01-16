@@ -87,6 +87,9 @@ export interface MyContextType {
   setParagraph :  Dispatch<SetStateAction<string>>;
   gameFinished : boolean;
   setGameFinished : Dispatch<SetStateAction<boolean>>;
+  gameTimeMidJoinRef : MutableRefObject<number>;
+  gameCompletionTime : number;
+  setGameCompletionTime : Dispatch<SetStateAction<number>>;
 }
 
 type OnTimeChangeCallback = (time: number) => void;

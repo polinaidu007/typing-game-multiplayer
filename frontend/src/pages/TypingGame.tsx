@@ -1,4 +1,4 @@
-import React, { Dispatch, SetStateAction, useEffect, useRef, useState } from 'react';
+import React, { Dispatch, SetStateAction, useContext, useEffect, useRef, useState } from 'react';
 import MyContext from '../context/myContext';
 import { useNavigate } from 'react-router-dom';
 import { ProgressBarsContainerProps, ProgressItem } from '../interfaces/all.interface';
@@ -9,7 +9,7 @@ function TypingGame() {
     let { username, roomName, isJoined, onlineUsersMap, gameStartsInCountDown, setGameStartsInCountDown, 
         progressMap, startGame, setStartGame, isReady, setIsReady, isReadyRef,
         startCountdown, setStartCountdown, gameCountDown, sendMessageToAllConnections,
-        setGameCountDown, startGameRef, startCountDownRef, startGlobalCountdown, paragraph, gameFinished, setGameFinished } = React.useContext(MyContext);
+        setGameCountDown, startGameRef, startCountDownRef, startGlobalCountdown, paragraph, gameFinished, setGameFinished, gameCompletionTime, setGameCompletionTime } = React.useContext(MyContext);
     const navigate = useNavigate();
     let [text, setText] = useState('');
     let [error, setError] = useState(false);
@@ -17,7 +17,6 @@ function TypingGame() {
     // let [isReady, setIsReady] = useState(false);
     // let [startCountdown, setStartCountdown] = useState(false);
     // let [startGame, setStartGame] = useState(false);
-    let [timeTaken, setTimeTaken] = useState(0);
     let [percentageCompleted, setPercentageCompleted] = useState(0);
     let [showStats, setShowStats] = useState(false);
     const errKeysTypedCount = useRef(0);
@@ -63,9 +62,9 @@ function TypingGame() {
     },[isReady])
 
     useEffect(()=>{
-        if(timeTaken > 0)
+        if(gameCompletionTime > 0)
             setShowStats(true);
-    }, [timeTaken]);
+    }, [gameCompletionTime]);
 
 
 
@@ -120,7 +119,7 @@ function TypingGame() {
 
     const onGameFinish = (time: number) => {
         setStartGame(false);
-        setTimeTaken(time / 1000);
+        setGameCompletionTime(time / 1000);
         sendMessageToAllConnections({ username, info: 'PROGRESS', progressStats: { timeTakenToComplete: time/1000 } });
     }
 
@@ -178,7 +177,7 @@ function TypingGame() {
                     </div>
 
                     <span className='text-red-500 h-3 font-semibold'>{error && `You mistyped the last letter. Correct it to continue.`}</span>
-                    <span className='text-green-500 h-3 font-semibold mb-4'>{gameFinished && `Congrats! You've completed in ${timeTaken} seconds.`}</span>
+                    <span className='text-green-500 h-3 font-semibold mb-4'>{gameFinished && `Congrats! You've completed in ${gameCompletionTime} seconds.`}</span>
                     {!startGame && <button
                         className={`bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded ${isReady ? 'disabled:opacity-50 cursor-not-allowed' : ''}`}
                         disabled={isReady}
@@ -188,7 +187,7 @@ function TypingGame() {
                     </button>}
                     {startCountdown && (<CountdownTimer onTimerEnd={handleInitialTimerEnd} stop={false}  text='Game starts in: ' countdown={gameStartsInCountDown} setCountdown={setGameStartsInCountDown}/>)}
                     {startGame && <CountdownTimer onTimerEnd={onGameFinish} stop={gameFinished} countdown={gameCountDown} setCountdown={setGameCountDown} text='Countdown: ' />}
-                    {showStats && <StatsSummary timeTaken={timeTaken} textLen={paragraph.length} errKeysTypedCount={errKeysTypedCount.current}/>}
+                    {showStats && <StatsSummary timeTaken={gameCompletionTime} textLen={paragraph.length} errKeysTypedCount={errKeysTypedCount.current}/>}
                 </div>
                 <div className='w-[20vw]'>
                     {startGame && <ProgressBarsContainer dictionary={progressMap} username={username} percentageCompleted={percentageCompleted} />}
@@ -228,12 +227,13 @@ const CountdownTimer = ({ stop, onTimerEnd, text = '', countdown, setCountdown }
     console.log('rerendering countdownTimer....')
     const startTime = useRef(Date.now());
     const countDownTime = useRef(countdown);
+    let {gameTimeMidJoinRef} = useContext(MyContext);
 
     useEffect(() => {
         let timer: ReturnType<typeof setTimeout>;
         if (stop || countdown <= 0) {
             const elapsedTime = Date.now() - startTime.current;
-            onTimerEnd(elapsedTime);
+            onTimerEnd(elapsedTime + ((gameTimeLimit - gameTimeMidJoinRef.current)*1000));
         } else if (countdown > 0) {
             timer = setTimeout(() => {
                 setCountdown((prevCountdown) =>{

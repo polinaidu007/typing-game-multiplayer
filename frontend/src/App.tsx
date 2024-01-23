@@ -4,6 +4,7 @@ import Chat from './pages/Chat';
 import MyContextProvider from './context/MyContextProvider';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import TypingGame from './pages/TypingGame';
+import { ToastContainer } from 'react-toastify';
 
 
 const App: React.FC = () => {
@@ -14,6 +15,7 @@ const App: React.FC = () => {
 
   return (
     <MyContextProvider>
+      <ToastContainer />
       <Router>
         <Routes>
           <Route path='/' element={<JoinRoom />} />

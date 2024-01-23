@@ -3,6 +3,7 @@ import MyContext from '../context/myContext';
 import { useNavigate } from 'react-router-dom';
 import { ProgressBarsContainerProps, ProgressItem } from '../interfaces/all.interface';
 import { gameTimeLimit } from '../constants/constants';
+import { toast } from 'react-toastify';
 
 
 function TypingGame() {
@@ -57,6 +58,11 @@ function TypingGame() {
         if(timeTaken > 0)
             setShowStats(true);
     }, [timeTaken]);
+
+    useEffect(()=>{
+        if(gameFinished)
+            toast.success(`Congrats! You've completed the game.`);
+    }, [gameFinished])
 
     const closeSocketConnection = () => {
         socket?.close();
@@ -113,6 +119,8 @@ function TypingGame() {
     }
 
     const onGameFinish = (time: number) => {
+        if(!gameFinished)
+            toast.error("Sorry. Your time is up!");
         setStartGame(false);
         setTimeTaken(time / 1000);
         sendMessageToAllConnections({ username, info: 'PROGRESS', progressStats: { timeTakenToComplete: time/1000 } });
@@ -172,7 +180,6 @@ function TypingGame() {
                     </div>
 
                     <span className='text-red-500 h-3 font-semibold'>{error && `You mistyped the last letter. Correct it to continue.`}</span>
-                    <span className='text-green-500 h-3 font-semibold mb-4'>{gameFinished && `Congrats! You've completed in ${timeTaken} seconds.`}</span>
                     {!startGame && <button
                         className={`bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded ${isReady ? 'disabled:opacity-50 cursor-not-allowed' : ''}`}
                         disabled={isReady}
@@ -188,7 +195,6 @@ function TypingGame() {
                     {startGame && <ProgressBarsContainer dictionary={progressMap} username={username} percentageCompleted={percentageCompleted} />}
                 </div>
             </div>
-
         </div>
     );
 }
@@ -243,10 +249,8 @@ const CountdownTimer = ({ stop, onTimerEnd, text = '', countdown, setCountdown }
 
     return (
         <div className="bg-gray-200 p-2 rounded mt-3">
-            {countdown === 0 ? (
-                <span className="text-red-500">Time is up!</span>
-            ) : (
-                <span className="text-gray-700">{text}{countdown}</span>
+            {countdown !== 0 &&
+                (<span className="text-gray-700">{text}{countdown}</span>
             )}
         </div>
     );

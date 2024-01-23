@@ -10,7 +10,7 @@ function TypingGame() {
     let { username, roomName, isJoined, onlineUsersMap, gameStartsInCountDown, setGameStartsInCountDown, 
         progressMap, startGame, setStartGame, isReady, setIsReady, isReadyRef,
         startCountdown, setStartCountdown, gameCountDown, sendMessageToAllConnections,
-        setGameCountDown, paragraph, gameFinished, setGameFinished, socket } = React.useContext(MyContext);
+        setGameCountDown, paragraph, socket } = React.useContext(MyContext);
     const navigate = useNavigate();
     let [text, setText] = useState('');
     let [error, setError] = useState(false);
@@ -21,6 +21,8 @@ function TypingGame() {
     let [percentageCompleted, setPercentageCompleted] = useState(0);
     let [showStats, setShowStats] = useState(false);
     const errKeysTypedCount = useRef(0);
+    let [userFinishedGame, setUserFinishedGame] = useState(false);
+    let [gameEnded, setGameEnded] = useState(false);
     // let [gameCountdown, setGameCountDown] = useState(240);
 
     useEffect(() => {
@@ -42,7 +44,7 @@ function TypingGame() {
             setError(false);
             broadcastProgressInfo()
             if (paragraph.length === text.length)
-                setGameFinished(true);
+                setUserFinishedGame(true);
         }
     }, [text])
 
@@ -60,9 +62,9 @@ function TypingGame() {
     }, [timeTaken]);
 
     useEffect(()=>{
-        if(gameFinished)
+        if(userFinishedGame)
             toast.success(`Congrats! You've completed the game.`);
-    }, [gameFinished])
+    }, [userFinishedGame])
 
     const closeSocketConnection = () => {
         socket?.close();
@@ -70,7 +72,7 @@ function TypingGame() {
 
 
     const checkIfEveryonesReady = () => {
-        if (!isReady || startCountdown || startGame || gameFinished)
+        if (!isReady || startCountdown || startGame || userFinishedGame)
             return;
         if (Object.keys(onlineUsersMap).length) {
             console.log(onlineUsersMap)
@@ -119,10 +121,11 @@ function TypingGame() {
     }
 
     const onGameFinish = (time: number) => {
-        if(!gameFinished)
+        if(!userFinishedGame)
             toast.error("Sorry. Your time is up!");
         setStartGame(false);
         setTimeTaken(time / 1000);
+        setGameEnded(true);
         sendMessageToAllConnections({ username, info: 'PROGRESS', progressStats: { timeTakenToComplete: time/1000 } });
     }
 
@@ -150,7 +153,7 @@ function TypingGame() {
                     </ul>
                 </div>
                 <div className='w-[60vw] flex flex-col items-center '>
-                    <div className='font-space-mono w-[80%] border border-gray-300 p-4 m-2'>
+                    {!gameEnded && <div className='font-space-mono w-[80%] border border-gray-300 p-4 m-2'>
                         {
                             text.length === 0 ?
                                 <span className="">
@@ -169,18 +172,18 @@ function TypingGame() {
                                     </span>
                                 </>
                         }
-                    </div>
-                    <div className='w-[80%] border border-gray-300 p-4 m-2'>
+                    </div>}
+                    {!gameEnded && <div className='w-[80%] border border-gray-300 p-4 m-2'>
                         <textarea placeholder='start typing...' className='font-space-mono w-full h-60 focus:outline-none'
                             value={text}
-                            disabled={gameFinished}
+                            disabled={userFinishedGame}
                             onChange={handleChange}
                             onKeyDown={handleKeyDown}
                         />
-                    </div>
+                    </div>}
 
                     <span className='text-red-500 h-3 font-semibold'>{error && `You mistyped the last letter. Correct it to continue.`}</span>
-                    {!startGame && <button
+                    {(!startGame && !gameEnded) && <button
                         className={`bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded ${isReady ? 'disabled:opacity-50 cursor-not-allowed' : ''}`}
                         disabled={isReady}
                         onClick={handleClick}
@@ -188,7 +191,7 @@ function TypingGame() {
                         I'm Ready!
                     </button>}
                     {startCountdown && (<CountdownTimer onTimerEnd={handleInitialTimerEnd} stop={false}  text='Game starts in: ' countdown={gameStartsInCountDown} setCountdown={setGameStartsInCountDown}/>)}
-                    {startGame && <CountdownTimer onTimerEnd={onGameFinish} stop={gameFinished} countdown={gameCountDown} setCountdown={setGameCountDown} text='Countdown: ' />}
+                    {startGame && <CountdownTimer onTimerEnd={onGameFinish} stop={userFinishedGame} countdown={gameCountDown} setCountdown={setGameCountDown} text='Countdown: ' />}
                     {showStats && <StatsSummary timeTaken={timeTaken} textLen={paragraph.length} errKeysTypedCount={errKeysTypedCount.current}/>}
                 </div>
                 <div className='w-[20vw]'>

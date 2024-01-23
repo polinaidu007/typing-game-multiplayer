@@ -26,7 +26,6 @@ function MyContextProvider({ children }: any) {
     let [gameCountDown, setGameCountDown] = useState(gameTimeLimit);
     const isReadyRef = useRef(false);
     let [paragraph, setParagraph] = useState('');
-    let [gameFinished, setGameFinished] = useState(false);
 
     const sendMessageToAllConnections = (message: Message) => {
         if (dataChannelRef.current) {
@@ -73,9 +72,7 @@ function MyContextProvider({ children }: any) {
         isReadyRef,
         sendMessageToAllConnections,
         paragraph,
-        setParagraph,
-        gameFinished,
-        setGameFinished
+        setParagraph
     };
 
 

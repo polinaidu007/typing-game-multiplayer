@@ -80,9 +80,7 @@ export interface MyContextType {
   isReadyRef : MutableRefObject<boolean>;
   sendMessageToAllConnections : (msg : Message) => void;
   paragraph : string;
-  setParagraph :  Dispatch<SetStateAction<string>>;
-  gameFinished : boolean;
-  setGameFinished : Dispatch<SetStateAction<boolean>>;
+  setParagraph :  Dispatch<SetStateAction<string>>
 }
 
 type OnTimeChangeCallback = (time: number) => void;

@@ -217,14 +217,18 @@ const ProgressBar: React.FC<ProgressItem> = ({ percentageCompleted, username }) 
 const ProgressBarsContainer: React.FC<ProgressBarsContainerProps> = ({ dictionary, username, percentageCompleted }) => {
     console.log(dictionary);
     return (
-        <div className='space-y-2 bg-white p-4 shadow-lg rounded-lg w-[90%] max-h-full'>
-            <ProgressBar username={`${username} (self)`} percentageCompleted={percentageCompleted} />
-            {
-                Object.keys(dictionary).map((key) =>
-                    <ProgressBar key={key} username={dictionary[key].username} percentageCompleted={dictionary[key].percentageCompleted} />
-                )
-            }
-        </div>);
+        <>
+            <h2 className="text-xl font-orbitron text-center text-fuchsia-500 mb-4">Players Progress</h2>
+            <div className='space-y-2 bg-white p-4 shadow-lg rounded-lg w-[90%] max-h-[50%] overflow-auto'>
+                <ProgressBar username={`${username} (self)`} percentageCompleted={percentageCompleted} />
+                {
+                    Object.keys(dictionary).map((key) =>
+                        <ProgressBar key={key} username={dictionary[key].username} percentageCompleted={dictionary[key].percentageCompleted} />
+                    )
+                }
+            </div>
+        </>
+        );
 }
 
 const CountdownTimer = ({ stop, onTimerEnd, text = '', countdown, setCountdown }: { stop: boolean; onTimerEnd: (elapsedTime: number) => void, text?: string, countdown : number, setCountdown : Dispatch<SetStateAction<number>>}) => {

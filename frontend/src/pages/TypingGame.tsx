@@ -129,6 +129,10 @@ function TypingGame() {
         sendMessageToAllConnections({ username, info: 'PROGRESS', progressStats: { timeTakenToComplete: time/1000 } });
     }
 
+    const handlePaste = (e : any) => {
+        e.preventDefault();
+    }
+
     return (
         <div className='flex flex-col items-center w-[100vw] h-[100vh]'>
             <div className='p-4'>
@@ -176,9 +180,10 @@ function TypingGame() {
                     {!gameEnded && <div className='w-[80%] border border-gray-300 p-4 m-2'>
                         <textarea placeholder='start typing...' className='font-space-mono w-full h-60 focus:outline-none'
                             value={text}
-                            disabled={userFinishedGame}
+                            disabled={userFinishedGame || !startGame}
                             onChange={handleChange}
                             onKeyDown={handleKeyDown}
+                            onPaste={handlePaste}
                         />
                     </div>}
 

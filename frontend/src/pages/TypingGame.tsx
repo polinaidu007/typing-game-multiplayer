@@ -197,7 +197,7 @@ function TypingGame() {
                     </button>}
                     {startCountdown && (<CountdownTimer onTimerEnd={handleInitialTimerEnd} stop={false}  text='Game starts in: ' countdown={gameStartsInCountDown} setCountdown={setGameStartsInCountDown}/>)}
                     {startGame && <CountdownTimer onTimerEnd={onGameFinish} stop={userFinishedGame} countdown={gameCountDown} setCountdown={setGameCountDown} text='Countdown: ' />}
-                    {showStats && <StatsSummary timeTaken={timeTaken} textLen={paragraph.length} errKeysTypedCount={errKeysTypedCount.current}/>}
+                    {showStats && <StatsSummary timeTaken={timeTaken} textLen={paragraph.length} errKeysTypedCount={errKeysTypedCount.current} showRank={userFinishedGame}/>}
                 </div>
                 <div className='w-[20vw]'>
                     {startGame && <ProgressBarsContainer dictionary={progressMap} username={username} percentageCompleted={percentageCompleted} />}
@@ -268,7 +268,7 @@ const CountdownTimer = ({ stop, onTimerEnd, text = '', countdown, setCountdown }
     );
 };
 
-const StatsSummary = ({ timeTaken, textLen, errKeysTypedCount }: { timeTaken: number, textLen: number, errKeysTypedCount: number}) => {
+const StatsSummary = ({ timeTaken, textLen, errKeysTypedCount, showRank }: { timeTaken: number, textLen: number, errKeysTypedCount: number, showRank : boolean}) => {
     let { progressMap } = React.useContext(MyContext);
     let [rank, setRank] = useState(0);
     let [wpm, setWpm] = useState(0);
@@ -300,9 +300,9 @@ const StatsSummary = ({ timeTaken, textLen, errKeysTypedCount }: { timeTaken: nu
     return (
         <div className='flex w-[80%] justify-evenly'>
             <StatItem name='wpm' val={`${wpm}`} />
-            <StatItem name='rank' val={`${rank}`} />
+            {showRank && <StatItem name='rank' val={`${rank}`} />}
             <StatItem name='accuracy' val={`${accuracy}%`} />
-            <StatItem name='time' val={`${Math.ceil(timeTaken)}s`} />
+            <StatItem name='time' val={`${Math.floor(timeTaken)}s`} />
         </div>
     )
 }

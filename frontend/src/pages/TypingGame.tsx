@@ -24,6 +24,9 @@ function TypingGame() {
     let [userFinishedGame, setUserFinishedGame] = useState(false);
     let [gameEnded, setGameEnded] = useState(false);
     // let [gameCountdown, setGameCountDown] = useState(240);
+    const toolTipText = `Game starts only when:
+          - There are at least two players in the room.
+          - All players in the room have indicated that they are 'Ready'.`
 
     useEffect(() => {
         console.log("useEffect typingGame:")
@@ -192,6 +195,7 @@ function TypingGame() {
                         className={`bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded ${isReady ? 'disabled:opacity-50 cursor-not-allowed' : ''}`}
                         disabled={isReady}
                         onClick={handleClick}
+                        title={toolTipText}
                     >
                         I'm Ready!
                     </button>}

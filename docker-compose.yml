@@ -1,0 +1,22 @@
+version: '1.0'
+
+services:
+  react-app:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    depends_on:
+      - "express-app"
+    env_file:
+      - .env
+  
+  express-app:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    ports:
+      - "9090:9090"
+    env_file:
+      - .env

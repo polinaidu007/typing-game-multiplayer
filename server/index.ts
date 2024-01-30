@@ -1,9 +1,11 @@
 const port = 9090;
 import {Server, Socket} from "socket.io"
 import { faker } from '@faker-js/faker';
+require('dotenv').config();
+
 let io = new Server({
     cors : {
-        origin: "http://localhost:3000"
+        origin: process.env.UI_URL || "http://localhost:3000"
     }
 })
 const server = io.listen(port);

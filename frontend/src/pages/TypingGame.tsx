@@ -190,7 +190,7 @@ function TypingGame() {
                         />
                     </div>}
 
-                    <span className='text-red-500 h-3 font-semibold'>{error && `You mistyped the last letter. Correct it to continue.`}</span>
+                    <span className='text-red-500 h-3 font-semibold'>{startGame && error && `You mistyped the last letter. Correct it to continue.`}</span>
                     {(!startGame && !gameEnded) && <button
                         className={`bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded ${isReady ? 'disabled:opacity-50 cursor-not-allowed' : ''}`}
                         disabled={isReady}

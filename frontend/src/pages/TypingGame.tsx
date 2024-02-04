@@ -1,24 +1,22 @@
-import React, { Dispatch, SetStateAction, useEffect, useRef, useState } from 'react';
+import React, {  useContext, useEffect, useRef, useState } from 'react';
 import MyContext from '../context/myContext';
 import { useNavigate } from 'react-router-dom';
-import { ProgressBarsContainerProps, ProgressItem } from '../interfaces/all.interface';
+import { ProgressItem } from '../interfaces/all.interface';
 import { gameTimeLimit } from '../constants/constants';
 import { toast } from 'react-toastify';
 
 
 function TypingGame() {
-    let { username, roomName, isJoined, onlineUsersMap, gameStartsInCountDown, setGameStartsInCountDown, 
-        progressMap, startGame, setStartGame, isReady, setIsReady, isReadyRef,
-        startCountdown, setStartCountdown, gameCountDown, sendMessageToAllConnections,
-        setGameCountDown, paragraph, socket } = React.useContext(MyContext);
+    let { isJoined, onlineUsersMap, 
+         startGame, setStartGame, isReady, setIsReady, isReadyRef,
+        sendMessageToAllConnections, paragraph, closeSocketConnection, setPercentageCompleted, usernameRef } = React.useContext(MyContext);
     const navigate = useNavigate();
     let [text, setText] = useState('');
     let [error, setError] = useState(false);
     // let [isReady, setIsReady] = useState(false);
-    // let [startCountdown, setStartCountdown] = useState(false);
+    let [startCountdown, setStartCountdown] = useState(false);
     // let [startGame, setStartGame] = useState(false);
     let [timeTaken, setTimeTaken] = useState(0);
-    let [percentageCompleted, setPercentageCompleted] = useState(0);
     let [showStats, setShowStats] = useState(false);
     const errKeysTypedCount = useRef(0);
     let [userFinishedGame, setUserFinishedGame] = useState(false);
@@ -69,11 +67,6 @@ function TypingGame() {
             toast.success(`Congrats! You've completed the game.`);
     }, [userFinishedGame])
 
-    const closeSocketConnection = () => {
-        socket?.close();
-    }
-
-
     const checkIfEveryonesReady = () => {
         if (!isReady || startCountdown || startGame || userFinishedGame)
             return;
@@ -91,7 +84,7 @@ function TypingGame() {
     const broadcastProgressInfo = () => {
         let progressValue = (text.length / paragraph.length) * 100;
         setPercentageCompleted(progressValue);
-        sendMessageToAllConnections({ username, info: 'PROGRESS', progressStats: { percentageCompleted: progressValue } });
+        sendMessageToAllConnections({ username : usernameRef.current, info: 'PROGRESS', progressStats: { percentageCompleted: progressValue } });
     }
 
     const handleChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -112,11 +105,8 @@ function TypingGame() {
         // setProgressBarVal(randomNumber);
         console.log('clicked')
         setIsReady(true);
-        sendMessageToAllConnections({ status: 'READY', username, info: 'STATUS' })
+        sendMessageToAllConnections({ status: 'READY', username : usernameRef.current, info: 'STATUS' })
     }
-
-    
-
 
     const handleInitialTimerEnd = () => {
         setStartGame(true);
@@ -129,11 +119,11 @@ function TypingGame() {
         setStartGame(false);
         setTimeTaken(time / 1000);
         setGameEnded(true);
-        sendMessageToAllConnections({ username, info: 'PROGRESS', progressStats: { timeTakenToComplete: time/1000 } });
+        sendMessageToAllConnections({ username : usernameRef.current, info: 'PROGRESS', progressStats: { timeTakenToComplete: time/1000 } });
     }
 
     const handlePaste = (e : any) => {
-        e.preventDefault();
+        // e.preventDefault();
     }
 
     return (
@@ -142,23 +132,7 @@ function TypingGame() {
                 <h1 className='font-press-start text-6xl'>Typing game</h1>
             </div>
             <div className='flex w-[100%] h-[100%]'>
-                <div className='w-[20vw] p-4'>
-                    <h2 className="text-xl font-orbitron text-center text-fuchsia-500 mb-4">{`Players Online (${roomName})`}</h2>
-                    <ul className='font-orbitron list-disc list-inside space-y-2 bg-white p-4 shadow-lg rounded-lg'>
-                        <li className="flex justify-between text-xs font-semibold text-gray-700">
-                            <span className="text-gray-700">{`${username} (self)`}</span>
-                            <span className={isReady ? `text-green-500` : `text-red-500`}>{isReady ? 'READY' : 'WAITING'}</span>
-                        </li>
-                        {
-                            Object.keys(onlineUsersMap).map((key) => (
-                                <li className="flex justify-between text-xs font-semibold text-gray-700" key={key}>
-                                    <span className="text-gray-700">{onlineUsersMap[key].username}</span>
-                                    <span className={onlineUsersMap[key].status === 'READY' ? `text-green-500` : `text-red-500`}>{onlineUsersMap[key].status}</span>
-                                </li>
-                            ))
-                        }
-                    </ul>
-                </div>
+                <OnlineUsersList />
                 <div className='w-[60vw] flex flex-col items-center '>
                     {!gameEnded && <div className='font-space-mono w-[80%] border border-gray-300 p-4 m-2'>
                         {
@@ -199,12 +173,12 @@ function TypingGame() {
                     >
                         I'm Ready!
                     </button>}
-                    {startCountdown && (<CountdownTimer onTimerEnd={handleInitialTimerEnd} stop={false}  text='Game starts in: ' countdown={gameStartsInCountDown} setCountdown={setGameStartsInCountDown}/>)}
-                    {startGame && <CountdownTimer onTimerEnd={onGameFinish} stop={userFinishedGame} countdown={gameCountDown} setCountdown={setGameCountDown} text='Countdown: ' />}
+                    {startCountdown && (<CountdownTimer onTimerEnd={handleInitialTimerEnd} stop={false}  text='Game starts in: ' timeLimit={5}/>)}
+                    {startGame && <CountdownTimer onTimerEnd={onGameFinish} stop={userFinishedGame} timeLimit={gameTimeLimit} text='Countdown: ' />}
                     {showStats && <StatsSummary timeTaken={timeTaken} textLen={paragraph.length} errKeysTypedCount={errKeysTypedCount.current} showRank={userFinishedGame}/>}
                 </div>
                 <div className='w-[20vw]'>
-                    {startGame && <ProgressBarsContainer dictionary={progressMap} username={username} percentageCompleted={percentageCompleted} />}
+                    {startGame && <ProgressBarsContainer />}
                 </div>
             </div>
         </div>
@@ -223,16 +197,16 @@ const ProgressBar: React.FC<ProgressItem> = ({ percentageCompleted, username }) 
     );
 };
 
-const ProgressBarsContainer: React.FC<ProgressBarsContainerProps> = ({ dictionary, username, percentageCompleted }) => {
-    console.log(dictionary);
+const ProgressBarsContainer = () => {
+    let {progressMap, username, percentageCompleted} = useContext(MyContext);
     return (
         <>
             <h2 className="text-xl font-orbitron text-center text-fuchsia-500 mb-4">Players Progress</h2>
             <div className='space-y-2 bg-white p-4 shadow-lg rounded-lg w-[90%] max-h-[50%] overflow-auto'>
                 <ProgressBar username={`${username} (self)`} percentageCompleted={percentageCompleted} />
                 {
-                    Object.keys(dictionary).map((key) =>
-                        <ProgressBar key={key} username={dictionary[key].username} percentageCompleted={dictionary[key].percentageCompleted} />
+                    Object.keys(progressMap).map((key) =>
+                        <ProgressBar key={key} username={progressMap[key].username} percentageCompleted={progressMap[key].percentageCompleted} />
                     )
                 }
             </div>
@@ -240,8 +214,9 @@ const ProgressBarsContainer: React.FC<ProgressBarsContainerProps> = ({ dictionar
         );
 }
 
-const CountdownTimer = ({ stop, onTimerEnd, text = '', countdown, setCountdown }: { stop: boolean; onTimerEnd: (elapsedTime: number) => void, text?: string, countdown : number, setCountdown : Dispatch<SetStateAction<number>>}) => {
+const CountdownTimer = ({ stop, onTimerEnd, text = '', timeLimit }: { stop: boolean; onTimerEnd: (elapsedTime: number) => void, text?: string, timeLimit : number}) => {
     console.log('rerendering countdownTimer....')
+    let [countdown, setCountdown] = useState(timeLimit);
     const startTime = useRef(Date.now());
     const countDownTime = useRef(countdown);
 
@@ -319,6 +294,32 @@ const StatItem = ({ name, val }: { name: string, val: string }) => {
         </div>
     )
 }
+
+const OnlineUsersList = () => {
+    let { username, roomName, onlineUsersMap, isReady } = React.useContext(MyContext);
+    return (
+        <div className='w-[20vw] p-4'>
+            <h2 className="text-xl font-orbitron text-center text-fuchsia-500 mb-4">{`Players Online (${roomName})`}</h2>
+            <ul className='font-orbitron list-disc list-inside space-y-2 bg-white p-4 shadow-lg rounded-lg'>
+                <OnlineUserItem key={username} username={username} status={isReady ? 'READY' : 'WAITING'}/>
+                {
+                    Object.keys(onlineUsersMap).map((key) => (
+                        <OnlineUserItem key={key} username={onlineUsersMap[key].username} status={onlineUsersMap[key].status}/>
+                    ))
+                }
+            </ul>
+        </div>);
+}
+
+const OnlineUserItem = ({ key, username, status }: { key: string, username: string, status: 'READY' | 'WAITING'  }) => {
+    return (
+        <li className="flex justify-between text-xs font-semibold text-gray-700" key={key}>
+            <span className="text-gray-700">{username}</span>
+            <span className={status === 'READY' ? `text-green-500` : `text-red-500`}>{status}</span>
+        </li>
+    )
+}
+
 
 
 

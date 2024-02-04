@@ -36,7 +36,7 @@ export interface PeerConnectionsMap {
 export interface PeerChannelsMap {
   [key: string]: RTCDataChannel;
 }
-type PeerIdUsersMap = {
+export type PeerIdUsersMap = {
   [key: string]: Required<Pick<Message, 'username' | 'status'>>;
 };
 
@@ -51,8 +51,6 @@ export interface ProgressItem {
 }
 
 export interface MyContextType {
-  socket: Socket | null;
-  setSocket: Dispatch<any>;
   roomName: string;
   setRoomName: Dispatch<SetStateAction<string>>;
   username: string;
@@ -71,16 +69,15 @@ export interface MyContextType {
   setIsReady : Dispatch<SetStateAction<boolean>>;
   startGame : boolean;
   setStartGame : Dispatch<SetStateAction<boolean>>;
-  gameStartsInCountDown : number;
-  setGameStartsInCountDown : Dispatch<SetStateAction<number>>;
-  startCountdown : boolean;
-  setStartCountdown : Dispatch<SetStateAction<boolean>>;
-  gameCountDown : number;
-  setGameCountDown : Dispatch<SetStateAction<number>>;
   isReadyRef : MutableRefObject<boolean>;
   sendMessageToAllConnections : (msg : Message) => void;
   paragraph : string;
-  setParagraph :  Dispatch<SetStateAction<string>>
+  setParagraph :  Dispatch<SetStateAction<string>>;
+  usernameRef : MutableRefObject<string>;
+  handleJoinRoom : () => void;
+  closeSocketConnection : () => void;
+  percentageCompleted : number;
+  setPercentageCompleted : Dispatch<SetStateAction<number>>;
 }
 
 type OnTimeChangeCallback = (time: number) => void;
@@ -88,10 +85,4 @@ type OnTimeChangeCallback = (time: number) => void;
 export interface TimerProps {
   stop: boolean;
   onTimeChange: OnTimeChangeCallback;
-}
-
-export interface ProgressBarsContainerProps {
-    dictionary : PeerIdProgressMap;
-    username : string, 
-    percentageCompleted : number
 }
